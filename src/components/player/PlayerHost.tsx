@@ -30,6 +30,7 @@ export default function PlayerHost() {
   const volume = usePlayer((s) => s.volume);
   const muted = usePlayer((s) => s.muted);
   const seekTo = usePlayer((s) => s.seekTo);
+  const sleepAt = usePlayer((s) => s.sleepAt);
 
   const isVideo = !!current && (current.kind === "video" || current.kind === "tv");
 
@@ -218,6 +219,22 @@ export default function PlayerHost() {
     }
     usePlayer.getState()._clearSeek();
   }, [seekTo, isVideo]);
+
+  // Sleep timer — auto-pause when the scheduled time arrives.
+  useEffect(() => {
+    if (sleepAt == null) return;
+    const fire = () => {
+      usePlayer.getState().pause();
+      usePlayer.getState().setSleepTimer(null);
+    };
+    const ms = sleepAt - Date.now();
+    if (ms <= 0) {
+      fire();
+      return;
+    }
+    const t = setTimeout(fire, ms);
+    return () => clearTimeout(t);
+  }, [sleepAt]);
 
   // Media Session — OS-level metadata + lock-screen / hardware-key controls.
   useEffect(() => {

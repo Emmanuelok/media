@@ -132,6 +132,25 @@ export async function searchRadio(query: string, limit = 40): Promise<MediaItem[
   return dedupeClean(data).slice(0, limit);
 }
 
+// Radio Browser uses ISO 3166-1 alpha-2 country codes (e.g. GB, not UK).
+export const RADIO_COUNTRIES = [
+  { code: "US", name: "United States", flag: "🇺🇸" },
+  { code: "GB", name: "United Kingdom", flag: "🇬🇧" },
+  { code: "CA", name: "Canada", flag: "🇨🇦" },
+  { code: "FR", name: "France", flag: "🇫🇷" },
+  { code: "DE", name: "Germany", flag: "🇩🇪" },
+  { code: "ES", name: "Spain", flag: "🇪🇸" },
+  { code: "IT", name: "Italy", flag: "🇮🇹" },
+  { code: "BR", name: "Brazil", flag: "🇧🇷" },
+  { code: "IN", name: "India", flag: "🇮🇳" },
+  { code: "NG", name: "Nigeria", flag: "🇳🇬" },
+  { code: "ZA", name: "South Africa", flag: "🇿🇦" },
+  { code: "JP", name: "Japan", flag: "🇯🇵" },
+  { code: "KR", name: "South Korea", flag: "🇰🇷" },
+  { code: "MX", name: "Mexico", flag: "🇲🇽" },
+  { code: "AU", name: "Australia", flag: "🇦🇺" },
+];
+
 export const RADIO_GENRES = [
   { id: "news", name: "News & Talk", emoji: "📰" },
   { id: "jazz", name: "Jazz", emoji: "🎷" },

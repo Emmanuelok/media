@@ -3,7 +3,14 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Radio, Search } from "lucide-react";
-import { topRadio, radioByTag, searchRadio, RADIO_GENRES } from "@/lib/radio";
+import {
+  topRadio,
+  radioByTag,
+  radioByCountry,
+  searchRadio,
+  RADIO_GENRES,
+  RADIO_COUNTRIES,
+} from "@/lib/radio";
 import { Browse } from "@/components/live/Browse";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Chips } from "@/components/ui/Chips";
@@ -13,9 +20,8 @@ function RadioInner() {
   const initialQ = sp.get("q") || "";
   const [q, setQ] = useState(initialQ);
   const [input, setInput] = useState(initialQ);
-  const [genre, setGenre] = useState("top");
+  const [sel, setSel] = useState("top");
 
-  // Sync when navigated here with a query (e.g. from the AI concierge).
   useEffect(() => {
     setQ(initialQ);
     setInput(initialQ);
@@ -23,11 +29,22 @@ function RadioInner() {
 
   const genreChips = [
     { id: "top", label: "Top", emoji: "🔥" },
-    ...RADIO_GENRES.map((g) => ({ id: g.id, label: g.name, emoji: g.emoji })),
+    ...RADIO_GENRES.map((g) => ({ id: `genre:${g.id}`, label: g.name, emoji: g.emoji })),
   ];
+  const countryChips = RADIO_COUNTRIES.map((c) => ({
+    id: `country:${c.code}`,
+    label: c.name,
+    emoji: c.flag,
+  }));
 
   const loader = () =>
-    q ? searchRadio(q) : genre === "top" ? topRadio(60) : radioByTag(genre, 48);
+    q
+      ? searchRadio(q)
+      : sel.startsWith("country:")
+        ? radioByCountry(sel.slice(8), 60)
+        : sel.startsWith("genre:")
+          ? radioByTag(sel.slice(6), 48)
+          : topRadio(60);
 
   return (
     <div className="animate-fade-up">
@@ -55,15 +72,26 @@ function RadioInner() {
       </form>
 
       {!q && (
-        <Chips
-          className="mb-6"
-          items={genreChips}
-          value={genre}
-          onChange={(g) => {
-            setGenre(g);
-            setQ("");
-          }}
-        />
+        <>
+          <Chips
+            className="mb-3"
+            items={genreChips}
+            value={sel}
+            onChange={(v) => {
+              setSel(v);
+              setQ("");
+            }}
+          />
+          <Chips
+            className="mb-6"
+            items={countryChips}
+            value={sel}
+            onChange={(v) => {
+              setSel(v);
+              setQ("");
+            }}
+          />
+        </>
       )}
       {q && (
         <p className="mb-4 text-sm text-muted">
@@ -81,10 +109,10 @@ function RadioInner() {
       )}
 
       <Browse
-        deps={[q, genre]}
+        deps={[q, sel]}
         loader={loader}
         square
-        empty="No stations found — try another search or genre."
+        empty="No stations found — try another search, genre or country."
       />
     </div>
   );

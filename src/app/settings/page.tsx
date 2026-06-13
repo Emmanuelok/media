@@ -41,6 +41,8 @@ export default function SettingsPage() {
 
   const autoplay = usePlayer((s) => s.autoplay);
   const setAutoplay = usePlayer((s) => s.setAutoplay);
+  const sleepAt = usePlayer((s) => s.sleepAt);
+  const setSleepTimer = usePlayer((s) => s.setSleepTimer);
   const clearFavorites = usePlayer((s) => s.clearFavorites);
   const clearHistory = usePlayer((s) => s.clearHistory);
   const favCount = usePlayer((s) => s.favorites.length);
@@ -110,6 +112,41 @@ export default function SettingsPage() {
                 )}
               />
             </button>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-2 border-t border-white/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-white">Sleep timer</p>
+              <p className="text-xs text-muted">
+                {sleepAt
+                  ? `Playback pauses in about ${Math.max(1, Math.round((sleepAt - Date.now()) / 60000))} min.`
+                  : "Automatically pause after a set time."}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  ["Off", null],
+                  ["15m", 15],
+                  ["30m", 30],
+                  ["60m", 60],
+                ] as [string, number | null][]
+              ).map(([label, mins]) => {
+                const active = mins == null ? !sleepAt : false;
+                return (
+                  <button
+                    key={label}
+                    onClick={() => setSleepTimer(mins)}
+                    className={cn(
+                      "rounded-full px-3 py-1.5 text-sm font-medium transition",
+                      active ? "bg-white text-black" : "bg-white/5 text-muted hover:text-white",
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </Section>
 

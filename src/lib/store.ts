@@ -35,6 +35,8 @@ interface PlayerState {
   shuffle: boolean;
   repeat: RepeatMode;
   autoplay: boolean;
+  /** Epoch ms at which playback should auto-pause, or null. Transient. */
+  sleepAt: number | null;
 
   // Persisted personalization
   recents: MediaItem[];
@@ -63,6 +65,7 @@ interface PlayerState {
   cycleRepeat: () => void;
   toggleFavorite: (item: MediaItem) => void;
   setAutoplay: (v: boolean) => void;
+  setSleepTimer: (minutes: number | null) => void;
   clearFavorites: () => void;
   clearHistory: () => void;
 
@@ -119,6 +122,7 @@ export const usePlayer = create<PlayerState>()(
         shuffle: false,
         repeat: "off",
         autoplay: true,
+        sleepAt: null,
         recents: [],
         favorites: [],
         progressById: {},
@@ -248,6 +252,7 @@ export const usePlayer = create<PlayerState>()(
           });
         },
         setAutoplay: (v) => set({ autoplay: v }),
+        setSleepTimer: (m) => set({ sleepAt: m == null ? null : Date.now() + m * 60000 }),
         clearFavorites: () => set({ favorites: [] }),
         clearHistory: () => set({ recents: [], progressById: {} }),
 
