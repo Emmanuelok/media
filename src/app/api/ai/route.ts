@@ -5,6 +5,13 @@ export const runtime = "nodejs";
 
 // Default to the latest, most capable Claude model. Override via env if desired.
 const MODEL = process.env.AURORA_AI_MODEL || "claude-opus-4-8";
+// Server-side allowlist — clients may pick from these, nothing else.
+const ALLOWED_MODELS = new Set([
+  "claude-opus-4-8",
+  "claude-sonnet-4-6",
+  "claude-haiku-4-5",
+  "claude-fable-5",
+]);
 
 const CATALOG = LOCAL_INDEX.map(
   (i) => `${i.id} | ${i.kind} | "${i.title}" by ${i.subtitle ?? "?"} [${i.category ?? ""}]`,
@@ -99,10 +106,12 @@ function localFallback(prompt: string): AiResult {
 export async function POST(req: Request) {
   let prompt = "";
   let history: { role: string; content: string }[] = [];
+  let model = MODEL;
   try {
     const body = await req.json();
     prompt = String(body.prompt ?? "").slice(0, 2000);
     if (Array.isArray(body.history)) history = body.history;
+    if (typeof body.model === "string" && ALLOWED_MODELS.has(body.model)) model = body.model;
   } catch {
     /* ignore bad body */
   }
@@ -132,7 +141,7 @@ export async function POST(req: Request) {
     ];
 
     const resp = await client.messages.create({
-      model: MODEL,
+      model,
       max_tokens: 1024,
       system: SYSTEM,
       messages,

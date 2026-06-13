@@ -1,16 +1,24 @@
 "use client";
 
+import { useEffect } from "react";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import MobileNav from "./MobileNav";
 import PlayerHost from "@/components/player/PlayerHost";
 import Concierge from "@/components/ai/Concierge";
 import { usePlayer } from "@/lib/store";
+import { useSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const current = usePlayer((s) => s.current);
+  const accent = useSettings((s) => s.accent);
   const audioActive = current && current.kind !== "video" && current.kind !== "tv";
+
+  // Apply the chosen accent color app-wide.
+  useEffect(() => {
+    document.documentElement.style.setProperty("--color-accent", accent);
+  }, [accent]);
 
   return (
     <div className="flex min-h-screen w-full">

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Sparkles } from "lucide-react";
+import { Search, Sparkles, Settings } from "lucide-react";
 import { useUI } from "@/lib/ui";
 
 export default function TopBar() {
@@ -35,6 +36,14 @@ export default function TopBar() {
         <Sparkles className="h-4 w-4" />
         <span className="hidden sm:inline">Ask Aurora</span>
       </button>
+
+      <Link
+        href="/settings"
+        className="hidden h-9 w-9 shrink-0 place-items-center rounded-full text-muted transition hover:bg-white/10 hover:text-white sm:grid"
+        aria-label="Settings"
+      >
+        <Settings className="h-5 w-5" />
+      </Link>
 
       <div className="hidden h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 text-sm font-bold text-white sm:grid">
         A

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, X, Send, Tv, Radio, Clapperboard, Music2, Loader2 } from "lucide-react";
 import { useUI } from "@/lib/ui";
+import { useSettings } from "@/lib/settings";
 import { LOCAL_INDEX } from "@/lib/catalog";
 import { MediaCard } from "@/components/media/Media";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,7 @@ export default function Concierge() {
   const open = useUI((s) => s.conciergeOpen);
   const seed = useUI((s) => s.conciergeSeed);
   const close = useUI((s) => s.closeConcierge);
+  const aiModel = useSettings((s) => s.aiModel);
   const router = useRouter();
 
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -61,7 +63,7 @@ export default function Concierge() {
       const res = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, history }),
+        body: JSON.stringify({ prompt, history, model: aiModel }),
       });
       const data = await res.json();
       const picks: MediaItem[] = (data.picks ?? [])

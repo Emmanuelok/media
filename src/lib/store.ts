@@ -34,6 +34,7 @@ interface PlayerState {
   seekTo: number | null; // imperative seek request consumed by PlayerHost
   shuffle: boolean;
   repeat: RepeatMode;
+  autoplay: boolean;
 
   // Persisted personalization
   recents: MediaItem[];
@@ -61,6 +62,9 @@ interface PlayerState {
   toggleShuffle: () => void;
   cycleRepeat: () => void;
   toggleFavorite: (item: MediaItem) => void;
+  setAutoplay: (v: boolean) => void;
+  clearFavorites: () => void;
+  clearHistory: () => void;
 
   // Engine sync (PlayerHost -> store)
   _setPlaying: (p: boolean) => void;
@@ -114,6 +118,7 @@ export const usePlayer = create<PlayerState>()(
         seekTo: null,
         shuffle: false,
         repeat: "off",
+        autoplay: true,
         recents: [],
         favorites: [],
         progressById: {},
@@ -168,7 +173,11 @@ export const usePlayer = create<PlayerState>()(
         },
 
         ended: () => {
-          const { repeat, index, queue } = get();
+          const { repeat, index, queue, autoplay } = get();
+          if (!autoplay) {
+            set({ isPlaying: false });
+            return;
+          }
           if (repeat === "one") {
             set({ seekTo: 0, progress: 0, isPlaying: true });
             return;
@@ -238,6 +247,9 @@ export const usePlayer = create<PlayerState>()(
               : [item, ...fav].slice(0, MAX_FAVORITES),
           });
         },
+        setAutoplay: (v) => set({ autoplay: v }),
+        clearFavorites: () => set({ favorites: [] }),
+        clearHistory: () => set({ recents: [], progressById: {} }),
 
         _setPlaying: (p) => set({ isPlaying: p }),
         _setProgress: (t) => set({ progress: t }),
@@ -268,6 +280,7 @@ export const usePlayer = create<PlayerState>()(
         progressById: s.progressById,
         shuffle: s.shuffle,
         repeat: s.repeat,
+        autoplay: s.autoplay,
       }),
     },
   ),
