@@ -13,6 +13,7 @@ export default function MobileNav() {
 
   return (
     <nav
+      aria-label="Primary"
       className={cn(
         "fixed inset-x-0 z-40 flex items-stretch border-t border-white/10 bg-[#0a0a11]/95 backdrop-blur-xl md:hidden",
         audioActive ? "bottom-20" : "bottom-0",
@@ -24,6 +25,7 @@ export default function MobileNav() {
           <Link
             key={href}
             href={href}
+            aria-current={active ? "page" : undefined}
             className={cn(
               "flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition",
               active ? "text-accent" : "text-muted",

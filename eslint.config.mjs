@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
     "**/*.test.ts",
     "**/*.test.tsx",
     "vitest.config.ts",
+    "public/sw.js",
   ]),
 ]);
 

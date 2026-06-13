@@ -31,13 +31,14 @@ export default function Sidebar() {
         </span>
       </Link>
 
-      <nav className="flex flex-col gap-0.5">
+      <nav aria-label="Primary" className="flex flex-col gap-0.5">
         {NAV.map(({ href, label, icon: Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
             <Link
               key={href}
               href={href}
+              aria-current={active ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
                 active
