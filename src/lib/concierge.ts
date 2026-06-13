@@ -10,6 +10,8 @@ export interface Query {
 export interface AiResult {
   reply: string;
   picks: string[];
+  /** One short "why I picked this" line keyed by pick id. */
+  reasons: Record<string, string>;
   queries: Query[];
 }
 
@@ -29,9 +31,18 @@ export function extractJson(text: string): Partial<AiResult> | null {
 }
 
 export function sanitize(r: Partial<AiResult> | null, fallbackReply: string): AiResult {
+  const picks = Array.isArray(r?.picks) ? r.picks.filter((id) => VALID_IDS.has(id)).slice(0, 4) : [];
+  const pickSet = new Set(picks);
+  const reasons: Record<string, string> = {};
+  if (r?.reasons && typeof r.reasons === "object") {
+    for (const [id, v] of Object.entries(r.reasons)) {
+      if (pickSet.has(id) && typeof v === "string") reasons[id] = v.slice(0, 140);
+    }
+  }
   return {
     reply: typeof r?.reply === "string" && r.reply.trim() ? r.reply.trim() : fallbackReply,
-    picks: Array.isArray(r?.picks) ? r.picks.filter((id) => VALID_IDS.has(id)).slice(0, 4) : [],
+    picks,
+    reasons,
     queries: Array.isArray(r?.queries)
       ? r.queries
           .filter(
@@ -71,5 +82,5 @@ export function localFallback(prompt: string): AiResult {
     picks.length || queries.length
       ? "Here's what I lined up across Aurora. Tip: set an ANTHROPIC_API_KEY to unlock full conversational AI curation."
       : "I'd love to help curate this. For the smartest results, set ANTHROPIC_API_KEY — meanwhile, explore Live TV and Radio for thousands of global channels.";
-  return { reply, picks, queries };
+  return { reply, picks, reasons: {}, queries };
 }

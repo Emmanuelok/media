@@ -33,6 +33,18 @@ describe("sanitize", () => {
   it("uses the fallback reply when missing", () => {
     expect(sanitize(null, "fallback").reply).toBe("fallback");
   });
+  it("keeps reasons only for valid picks", () => {
+    const validId = LOCAL_INDEX[0].id;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw: any = {
+      reply: "ok",
+      picks: [validId],
+      reasons: { [validId]: "great pick", "video:nope": "x" },
+    };
+    const out = sanitize(raw, "fb");
+    expect(out.reasons[validId]).toBe("great pick");
+    expect(out.reasons["video:nope"]).toBeUndefined();
+  });
 });
 
 describe("localFallback", () => {

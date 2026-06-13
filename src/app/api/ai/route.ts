@@ -31,10 +31,11 @@ search queries the user can tap, each as {"kind":"tv"|"radio","q":"<short query>
 Examples: live news -> {"kind":"tv","q":"news"}; world cup / football -> {"kind":"tv","q":"sports"};
 lofi study beats -> {"kind":"radio","q":"lofi"}; jazz -> {"kind":"radio","q":"jazz"}.
 
-Respond with a warm, concise reply (1-3 sentences) and your selections.
+Respond with a warm, concise reply (1-3 sentences) and your selections. For each catalog pick,
+include a one-line reason (max ~14 words) explaining why it fits, in "reasons" keyed by the pick id.
 
 OUTPUT FORMAT — respond with ONLY a JSON object, no prose, no markdown fences:
-{"reply": string, "picks": string[] (0-4 catalog ids), "queries": [{"kind": "tv"|"radio"|"video"|"music", "q": string}] (0-3)}`;
+{"reply": string, "picks": string[] (0-4 catalog ids), "reasons": {"<pick id>": "<short why>"}, "queries": [{"kind": "tv"|"radio"|"video"|"music", "q": string}] (0-3)}`;
 
 export async function POST(req: Request) {
   let prompt = "";

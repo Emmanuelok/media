@@ -18,6 +18,7 @@ interface Msg {
   role: "user" | "assistant";
   content: string;
   picks?: MediaItem[];
+  reasons?: Record<string, string>;
   queries?: QueryChip[];
 }
 
@@ -75,6 +76,7 @@ export default function Concierge() {
           role: "assistant",
           content: data.reply ?? "Here's what I found.",
           picks,
+          reasons: data.reasons ?? {},
           queries: data.queries ?? [],
         },
       ]);
@@ -157,7 +159,14 @@ export default function Concierge() {
                 {m.picks && m.picks.length > 0 && (
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     {m.picks.slice(0, 4).map((it) => (
-                      <MediaCard key={it.id} item={it} queue={m.picks} />
+                      <div key={it.id}>
+                        <MediaCard item={it} queue={m.picks} />
+                        {m.reasons?.[it.id] && (
+                          <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted">
+                            {m.reasons[it.id]}
+                          </p>
+                        )}
+                      </div>
                     ))}
                   </div>
                 )}
