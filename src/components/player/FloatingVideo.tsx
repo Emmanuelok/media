@@ -1,6 +1,6 @@
 "use client";
 
-import { type RefObject, useRef } from "react";
+import { type RefObject, useEffect, useRef, useState } from "react";
 import { usePlayer } from "@/lib/store";
 import { formatTime, cn } from "@/lib/utils";
 import {
@@ -38,6 +38,29 @@ export default function FloatingVideo({
   const pct = s.duration > 0 && isFinite(s.duration) ? (s.progress / s.duration) * 100 : 0;
 
   const favorited = !!c && s.favorites.some((f) => f.id === c.id);
+
+  // Auto-skip dead live channels: when a TV stream errors and there are more in
+  // the queue, advance to the next channel after a short, cancelable countdown.
+  const queueLen = s.queue.length;
+  const canAutoSkip = !!s.error && c?.kind === "tv" && queueLen > 1;
+  const [autoSkip, setAutoSkip] = useState(true);
+  const [countdown, setCountdown] = useState(0);
+  const next = s.next;
+
+  useEffect(() => {
+    if (!canAutoSkip || !autoSkip) {
+      setCountdown(0);
+      return;
+    }
+    setCountdown(6);
+    const iv = setInterval(() => setCountdown((n) => Math.max(0, n - 1)), 1000);
+    const to = setTimeout(() => next(), 6000);
+    return () => {
+      clearInterval(iv);
+      clearTimeout(to);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canAutoSkip, autoSkip, c?.id]);
 
   const goFullscreen = () => {
     const el = frameRef.current;
@@ -95,12 +118,25 @@ export default function FloatingVideo({
             <div className="max-w-sm">
               <AlertTriangle className="mx-auto h-8 w-8 text-amber-400" />
               <p className="mt-2 text-sm text-white">{s.error}</p>
-              <button
-                onClick={s.next}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
-              >
-                <SkipForward className="h-3.5 w-3.5" /> Try next
-              </button>
+              {canAutoSkip && autoSkip && countdown > 0 && (
+                <p className="mt-1 text-xs text-muted">Trying next channel in {countdown}s…</p>
+              )}
+              <div className="mt-3 flex items-center justify-center gap-2">
+                <button
+                  onClick={s.next}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
+                >
+                  <SkipForward className="h-3.5 w-3.5" /> {canAutoSkip ? "Next now" : "Try next"}
+                </button>
+                {canAutoSkip && autoSkip && (
+                  <button
+                    onClick={() => setAutoSkip(false)}
+                    className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
