@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   title: "Aurora — AI Media House",
   description:
     "One home for everything: on-demand video, music, and live TV & radio from across the globe — curated by AI.",
+  applicationName: "Aurora",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "Aurora", statusBarStyle: "black-translucent" },
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/icon.svg" }],
+  },
 };
 
 export const viewport: Viewport = {
