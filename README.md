@@ -54,6 +54,31 @@ AURORA_AI_MODEL=claude-opus-4-8
 
 ---
 
+## ☁️ Deploy
+
+The only server-side piece is `/api/ai` (Node runtime); live TV/radio are fetched
+client-side, so the host needs no special networking. Set **`ANTHROPIC_API_KEY`** in the
+platform's environment variables (see `.env.example`).
+
+**Vercel (recommended — zero config):** import the repo at [vercel.com](https://vercel.com),
+add the env var, deploy. Next.js is auto-detected.
+
+**Docker / any Node host** (Railway, Render, Fly.io, Google Cloud Run): the repo ships a
+`Dockerfile` built on Next.js [standalone output](https://nextjs.org/docs/app/api-reference/config/next-config-js/output):
+
+```bash
+docker build -t aurora .
+docker run -p 3000:3000 -e ANTHROPIC_API_KEY=sk-ant-... aurora
+```
+
+> A persistent Node host (rather than serverless functions) is the better home if you later
+> add a **server-side HLS proxy** to widen live-stream coverage — long-lived streaming
+> connections don't fit serverless time/bandwidth limits well.
+
+Note: a pure static export isn't possible as-is because of the `/api/ai` route.
+
+---
+
 ## 🧱 Architecture
 
 ```
