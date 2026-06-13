@@ -1,18 +1,11 @@
 import dns from "node:dns/promises";
 import net from "node:net";
+import { ipBlocked, hostAllowed, rewriteHlsPlaylist, isCacheablePlaylist } from "@/lib/proxy";
 
-// Server-side stream proxy. Makes more public live streams playable in-browser by:
-//   1. adding permissive CORS headers (so hls.js can fetch playlists/segments),
-//   2. serving HTTP-only origins over our HTTPS endpoint (fixes mixed-content),
-//   3. rewriting HLS playlists so nested variant/segment/key URLs route back here.
-//
-// Hardened for production use:
-//   - SSRF: http(s) only; private/loopback/link-local/metadata IPs blocked across
-//     redirects; media-only responses.
-//   - Per-IP token-bucket rate limiting (AURORA_PROXY_RPM, default 300/min).
-//   - Optional upstream host allowlist (AURORA_PROXY_ALLOWED_HOSTS, comma-separated
-//     suffixes) — when set, only those hosts are proxied.
-//   - Small in-memory cache for static master / VOD playlists (live is never cached).
+// Server-side stream proxy. Makes more public live streams playable in-browser by
+// adding CORS, upgrading HTTP→HTTPS, and rewriting HLS playlists. Hardened with
+// SSRF guards, per-IP rate limiting, an optional host allowlist, and a small
+// playlist cache. Pure logic lives in src/lib/proxy.ts (unit-tested).
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -72,44 +65,13 @@ function cacheSet(key: string, body: string) {
   }
   playlistCache.set(key, { body, exp: Date.now() + PLAYLIST_TTL });
 }
-// Master playlists and VOD (ENDLIST) are static enough to cache; live is not.
-const isCacheable = (text: string) =>
-  /#EXT-X-STREAM-INF/i.test(text) || /#EXT-X-ENDLIST/i.test(text);
-
-// ---- SSRF guards ----
-function ipBlocked(ip: string): boolean {
-  if (net.isIPv4(ip)) {
-    const [a, b] = ip.split(".").map(Number);
-    if (a === 0 || a === 10 || a === 127) return true;
-    if (a === 169 && b === 254) return true;
-    if (a === 172 && b >= 16 && b <= 31) return true;
-    if (a === 192 && b === 168) return true;
-    if (a === 100 && b >= 64 && b <= 127) return true;
-    return false;
-  }
-  if (net.isIPv6(ip)) {
-    const v = ip.toLowerCase();
-    if (v === "::1" || v === "::") return true;
-    if (v.startsWith("fc") || v.startsWith("fd")) return true;
-    if (v.startsWith("fe80")) return true;
-    if (v.startsWith("::ffff:")) return ipBlocked(v.slice(7));
-    return false;
-  }
-  return true;
-}
-
-function hostAllowed(host: string): boolean {
-  if (!ALLOWED_HOSTS.length) return true;
-  const h = host.toLowerCase();
-  return ALLOWED_HOSTS.some((a) => h === a || h.endsWith("." + a));
-}
 
 async function assertReachable(hostname: string): Promise<void> {
   const host = hostname.toLowerCase();
   if (host === "localhost" || host.endsWith(".local") || host.endsWith(".internal")) {
     throw new Error("blocked host");
   }
-  if (!hostAllowed(host)) throw new Error("host not allowed");
+  if (!hostAllowed(host, ALLOWED_HOSTS)) throw new Error("host not allowed");
   if (net.isIP(host)) {
     if (ipBlocked(host)) throw new Error("blocked host");
     return;
@@ -117,32 +79,6 @@ async function assertReachable(hostname: string): Promise<void> {
   const addrs = await dns.lookup(host, { all: true });
   if (!addrs.length) throw new Error("unresolved host");
   for (const a of addrs) if (ipBlocked(a.address)) throw new Error("blocked host");
-}
-
-// ---- HLS rewriting ----
-const proxy = (u: string) => `/api/stream?url=${encodeURIComponent(u)}`;
-const absolute = (u: string, base: string) => {
-  try {
-    return new URL(u, base).toString();
-  } catch {
-    return u;
-  }
-};
-const URI_ATTR = /URI="([^"]*)"/g;
-function rewritePlaylist(text: string, base: string): string {
-  return text
-    .split(/\r?\n/)
-    .map((line) => {
-      const t = line.trim();
-      if (!t) return line;
-      if (t.startsWith("#")) {
-        return t.includes('URI="')
-          ? line.replace(URI_ATTR, (_m, u) => `URI="${proxy(absolute(u, base))}"`)
-          : line;
-      }
-      return proxy(absolute(t, base));
-    })
-    .join("\n");
 }
 
 async function fetchUpstream(initial: string, range: string | null) {
@@ -242,8 +178,8 @@ export async function GET(req: Request) {
   }
 
   if (isM3u8 || /mpegurl/i.test(ct)) {
-    const rewritten = rewritePlaylist(await res.text(), finalUrl);
-    if (isCacheable(rewritten)) cacheSet(cacheKey, rewritten);
+    const rewritten = rewriteHlsPlaylist(await res.text(), finalUrl);
+    if (isCacheablePlaylist(rewritten)) cacheSet(cacheKey, rewritten);
     return playlistResponse(rewritten);
   }
 
