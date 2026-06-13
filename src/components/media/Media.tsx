@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { ChevronLeft, ChevronRight, Play } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, Heart } from "lucide-react";
 import { usePlayer } from "@/lib/store";
 import { Artwork } from "@/components/ui/Artwork";
 import { cn, formatTime } from "@/lib/utils";
@@ -17,16 +17,15 @@ export function MediaCard({
   className?: string;
 }) {
   const play = usePlayer((s) => s.play);
+  const toggleFavorite = usePlayer((s) => s.toggleFavorite);
   const current = usePlayer((s) => s.current);
+  const favorited = usePlayer((s) => s.favorites.some((f) => f.id === item.id));
   const isActive = current?.id === item.id;
   const wide = item.kind === "video" || item.kind === "tv";
   const contain = item.kind === "tv" || item.kind === "radio";
 
   return (
-    <button
-      onClick={() => play(item, queue)}
-      className={cn("group block w-full text-left", className)}
-    >
+    <div className={cn("group block w-full text-left", className)}>
       <div
         className={cn(
           "relative w-full overflow-hidden rounded-xl bg-surface-2 ring-1 ring-white/5",
@@ -43,8 +42,11 @@ export function MediaCard({
           className="transition duration-500 group-hover:scale-105"
         />
 
+        {/* Full-area play target (kept separate from the like button — no nested buttons) */}
+        <button onClick={() => play(item, queue)} className="absolute inset-0 z-10" aria-label={`Play ${item.title}`} />
+
         {item.isLive && (
-          <span className="absolute left-2 top-2 flex items-center gap-1 rounded bg-black/65 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur">
+          <span className="pointer-events-none absolute left-2 top-2 z-20 flex items-center gap-1 rounded bg-black/65 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
             Live
           </span>
@@ -52,7 +54,7 @@ export function MediaCard({
         {item.badge && item.badge !== "LIVE" && (
           <span
             className={cn(
-              "absolute right-2 top-2 rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wide backdrop-blur",
+              "pointer-events-none absolute right-2 top-2 z-20 rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wide backdrop-blur",
               item.badge === "4K"
                 ? "bg-gradient-to-r from-fuchsia-500 to-cyan-400 text-white"
                 : "bg-black/65 text-white",
@@ -62,19 +64,30 @@ export function MediaCard({
           </span>
         )}
         {item.duration && !item.isLive && (
-          <span className="absolute bottom-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-white">
+          <span className="pointer-events-none absolute bottom-2 right-2 z-20 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-white">
             {formatTime(item.duration)}
           </span>
         )}
 
-        <div className="absolute inset-0 grid place-items-center bg-gradient-to-t from-black/50 to-transparent opacity-0 transition duration-200 group-hover:opacity-100">
+        <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center bg-gradient-to-t from-black/50 to-transparent opacity-0 transition duration-200 group-hover:opacity-100">
           <span className="grid h-12 w-12 translate-y-2 place-items-center rounded-full bg-accent text-white shadow-xl transition duration-200 group-hover:translate-y-0">
             <Play className="ml-0.5 h-5 w-5" fill="currentColor" />
           </span>
         </div>
+
+        <button
+          onClick={() => toggleFavorite(item)}
+          className={cn(
+            "absolute bottom-2 left-2 z-30 grid h-8 w-8 place-items-center rounded-full bg-black/55 backdrop-blur transition focus-visible:opacity-100",
+            favorited ? "text-accent opacity-100" : "text-white opacity-0 group-hover:opacity-100",
+          )}
+          aria-label={favorited ? "Remove from favorites" : "Save to favorites"}
+        >
+          <Heart className="h-4 w-4" fill={favorited ? "currentColor" : "none"} />
+        </button>
       </div>
 
-      <div className="mt-2 px-0.5">
+      <button onClick={() => play(item, queue)} className="mt-2 block w-full px-0.5 text-left">
         <p
           className={cn(
             "line-clamp-2 text-sm font-semibold leading-snug",
@@ -87,8 +100,8 @@ export function MediaCard({
           {item.subtitle}
           {item.metric ? ` · ${item.metric}` : ""}
         </p>
-      </div>
-    </button>
+      </button>
+    </div>
   );
 }
 

@@ -8,9 +8,13 @@ import { VIDEOS, TRACKS } from "@/lib/catalog";
 import { FEATURED_TV } from "@/lib/tv";
 import { topRadio } from "@/lib/radio";
 import { useUI } from "@/lib/ui";
+import { usePlayer } from "@/lib/store";
 
 export default function Home() {
   const openConcierge = useUI((s) => s.openConcierge);
+  const recents = usePlayer((s) => s.recents);
+  const progressById = usePlayer((s) => s.progressById);
+  const continueWatching = recents.filter((r) => r.kind === "video" && (progressById[r.id] ?? 0) > 0);
 
   return (
     <div className="animate-fade-up">
@@ -55,6 +59,14 @@ export default function Home() {
       </section>
 
       <div className="mt-10">
+        {continueWatching.length > 0 && (
+          <Shelf
+            title="Continue Watching"
+            subtitle="Jump back in"
+            items={continueWatching}
+            cardWidth="w-60 sm:w-72"
+          />
+        )}
         <Shelf title="Trending Now" subtitle="What the world is watching" items={VIDEOS.slice(0, 8)} cardWidth="w-60 sm:w-72" />
         <Shelf
           title="Live TV · Featured Channels"

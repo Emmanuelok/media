@@ -1,8 +1,9 @@
 "use client";
 
 import { usePlayer } from "@/lib/store";
+import { useUI } from "@/lib/ui";
 import { Artwork } from "@/components/ui/Artwork";
-import { formatTime } from "@/lib/utils";
+import { formatTime, cn } from "@/lib/utils";
 import {
   Play,
   Pause,
@@ -14,16 +15,23 @@ import {
   Heart,
   Loader2,
   ListMusic,
+  Shuffle,
+  Repeat,
+  Repeat1,
 } from "lucide-react";
 
 export default function NowPlayingBar() {
   const s = usePlayer();
+  const toggleQueue = useUI((u) => u.toggleQueue);
+  const queueOpen = useUI((u) => u.queueOpen);
   const c = s.current;
   if (!c) return null;
 
   const live = c.isLive || !isFinite(s.duration) || (s.duration === 0 && c.kind === "radio");
   const pct = s.duration > 0 && isFinite(s.duration) ? (s.progress / s.duration) * 100 : 0;
   const VolumeIcon = s.muted || s.volume === 0 ? VolumeX : s.volume < 0.5 ? Volume1 : Volume2;
+  const favorited = s.favorites.some((f) => f.id === c.id);
+  const RepeatIcon = s.repeat === "one" ? Repeat1 : Repeat;
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#0b0b12]/85 backdrop-blur-xl">
@@ -53,21 +61,31 @@ export default function NowPlayingBar() {
             <p className="truncate text-xs text-muted">{c.subtitle}</p>
           </div>
           <button
-            className="ml-1 hidden shrink-0 rounded-full p-2 text-muted transition hover:text-accent sm:block"
-            aria-label="Save"
+            onClick={() => s.toggleFavorite(c)}
+            className={cn(
+              "ml-1 hidden shrink-0 rounded-full p-2 transition sm:block",
+              favorited ? "text-accent" : "text-muted hover:text-accent",
+            )}
+            aria-label={favorited ? "Remove from favorites" : "Save to favorites"}
           >
-            <Heart className="h-4 w-4" />
+            <Heart className="h-4 w-4" fill={favorited ? "currentColor" : "none"} />
           </button>
         </div>
 
         {/* Transport + progress */}
         <div className="flex max-w-2xl flex-[1.4] flex-col items-center gap-1.5">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
-              onClick={s.prev}
-              className="text-muted transition hover:text-white"
-              aria-label="Previous"
+              onClick={s.toggleShuffle}
+              aria-label="Shuffle"
+              className={cn(
+                "hidden transition sm:block",
+                s.shuffle ? "text-accent" : "text-muted hover:text-white",
+              )}
             >
+              <Shuffle className="h-4 w-4" />
+            </button>
+            <button onClick={s.prev} className="text-muted transition hover:text-white" aria-label="Previous">
               <SkipBack className="h-5 w-5" fill="currentColor" />
             </button>
             <button
@@ -83,12 +101,19 @@ export default function NowPlayingBar() {
                 <Play className="ml-0.5 h-5 w-5" fill="currentColor" />
               )}
             </button>
-            <button
-              onClick={s.next}
-              className="text-muted transition hover:text-white"
-              aria-label="Next"
-            >
+            <button onClick={s.next} className="text-muted transition hover:text-white" aria-label="Next">
               <SkipForward className="h-5 w-5" fill="currentColor" />
+            </button>
+            <button
+              onClick={s.cycleRepeat}
+              aria-label={`Repeat: ${s.repeat}`}
+              title={`Repeat: ${s.repeat}`}
+              className={cn(
+                "hidden transition sm:block",
+                s.repeat !== "off" ? "text-accent" : "text-muted hover:text-white",
+              )}
+            >
+              <RepeatIcon className="h-4 w-4" />
             </button>
           </div>
 
@@ -121,16 +146,19 @@ export default function NowPlayingBar() {
           </div>
         </div>
 
-        {/* Volume */}
+        {/* Volume + queue */}
         <div className="hidden min-w-0 flex-1 items-center justify-end gap-2 md:flex">
-          <button className="rounded-full p-2 text-muted transition hover:text-white" aria-label="Queue">
+          <button
+            onClick={toggleQueue}
+            className={cn(
+              "rounded-full p-2 transition",
+              queueOpen ? "text-accent" : "text-muted hover:text-white",
+            )}
+            aria-label="Queue"
+          >
             <ListMusic className="h-4 w-4" />
           </button>
-          <button
-            onClick={s.toggleMute}
-            className="text-muted transition hover:text-white"
-            aria-label="Mute"
-          >
+          <button onClick={s.toggleMute} className="text-muted transition hover:text-white" aria-label="Mute">
             <VolumeIcon className="h-5 w-5" />
           </button>
           <input

@@ -7,11 +7,14 @@ import { isHls } from "@/lib/utils";
 import { proxiedUrl, needsProxy } from "@/lib/stream";
 import NowPlayingBar from "./NowPlayingBar";
 import FloatingVideo from "./FloatingVideo";
+import QueuePanel from "./QueuePanel";
 
 /**
  * The single media engine for the whole app. It owns one <audio> and one <video>
  * element that live here permanently, so navigating between pages never interrupts
- * playback. HLS streams are wired through hls.js (with native fallback on Safari).
+ * playback. HLS streams run through hls.js (native fallback on Safari) with an
+ * automatic /api/stream proxy fallback. Also wires resume positions, OS-level
+ * Media Session controls, and keyboard shortcuts.
  */
 export default function PlayerHost() {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -19,6 +22,8 @@ export default function PlayerHost() {
   const hlsRef = useRef<HlsType | null>(null);
   const originalSrcRef = useRef<string>("");
   const proxyTriedRef = useRef(false);
+  const pendingResumeRef = useRef(0);
+  const lastSaveRef = useRef(0);
 
   const current = usePlayer((s) => s.current);
   const isPlaying = usePlayer((s) => s.isPlaying);
@@ -32,50 +37,78 @@ export default function PlayerHost() {
   useEffect(() => {
     const els = [audioRef.current, videoRef.current].filter(Boolean) as HTMLMediaElement[];
     const S = usePlayer.getState;
+
     const onTime = (e: Event) => {
       const el = e.currentTarget as HTMLMediaElement;
       S()._setProgress(el.currentTime);
       const b = el.buffered;
       if (b.length) S()._setBuffered(b.end(b.length - 1));
+
+      const c = S().current;
+      if (c && el === videoRef.current && c.kind === "video") {
+        const now = Date.now();
+        if (now - lastSaveRef.current > 4000) {
+          lastSaveRef.current = now;
+          S()._saveProgress(c.id, el.currentTime, el.duration);
+        }
+      }
+      if ("mediaSession" in navigator && isFinite(el.duration) && el.duration > 0) {
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: el.duration,
+            position: Math.min(el.currentTime, el.duration),
+            playbackRate: el.playbackRate || 1,
+          });
+        } catch {
+          /* some browsers reject odd values */
+        }
+      }
     };
-    const onMeta = (e: Event) => S()._setDuration((e.currentTarget as HTMLMediaElement).duration);
+    const onMeta = (e: Event) => {
+      const el = e.currentTarget as HTMLMediaElement;
+      S()._setDuration(el.duration);
+      if (el === videoRef.current && pendingResumeRef.current > 0 && isFinite(el.duration)) {
+        try {
+          el.currentTime = pendingResumeRef.current;
+        } catch {
+          /* noop */
+        }
+        pendingResumeRef.current = 0;
+      }
+    };
     const onPlay = () => S()._setPlaying(true);
-    const onPause = () => S()._setPlaying(false);
+    const onPause = (e: Event) => {
+      S()._setPlaying(false);
+      const el = e.currentTarget as HTMLMediaElement;
+      const c = S().current;
+      if (c && el === videoRef.current && c.kind === "video") {
+        S()._saveProgress(c.id, el.currentTime, el.duration);
+      }
+    };
     const onWaiting = () => S()._setLoading(true);
     const onPlaying = () => S()._setLoading(false);
-    const onEnded = () => S().next();
+    const onEnded = () => S().ended();
     const onErr = () => {
-      // HLS errors (incl. proxy fallback) are handled by the hls.js error handler.
-      if (hlsRef.current) return;
+      if (hlsRef.current) return; // HLS errors handled by the hls.js handler (with proxy fallback)
       S()._setError("Playback failed — this source may be offline, geo-blocked, or HTTP-only.");
     };
 
-    els.forEach((el) => {
-      el.addEventListener("timeupdate", onTime);
-      el.addEventListener("durationchange", onMeta);
-      el.addEventListener("loadedmetadata", onMeta);
-      el.addEventListener("play", onPlay);
-      el.addEventListener("pause", onPause);
-      el.addEventListener("waiting", onWaiting);
-      el.addEventListener("playing", onPlaying);
-      el.addEventListener("ended", onEnded);
-      el.addEventListener("error", onErr);
-    });
-    return () =>
-      els.forEach((el) => {
-        el.removeEventListener("timeupdate", onTime);
-        el.removeEventListener("durationchange", onMeta);
-        el.removeEventListener("loadedmetadata", onMeta);
-        el.removeEventListener("play", onPlay);
-        el.removeEventListener("pause", onPause);
-        el.removeEventListener("waiting", onWaiting);
-        el.removeEventListener("playing", onPlaying);
-        el.removeEventListener("ended", onEnded);
-        el.removeEventListener("error", onErr);
-      });
+    const handlers: [string, EventListener][] = [
+      ["timeupdate", onTime],
+      ["durationchange", onMeta],
+      ["loadedmetadata", onMeta],
+      ["play", onPlay],
+      ["pause", onPause],
+      ["waiting", onWaiting],
+      ["playing", onPlaying],
+      ["ended", onEnded],
+      ["error", onErr],
+    ];
+    els.forEach((el) => handlers.forEach(([ev, fn]) => el.addEventListener(ev, fn)));
+    return () => els.forEach((el) => handlers.forEach(([ev, fn]) => el.removeEventListener(ev, fn)));
   }, []);
 
-  // Load the source whenever the current item changes.
+  // Load the source whenever the current item changes (with proxy fallback).
   useEffect(() => {
     const item = current;
     const el = isVideo ? videoRef.current : audioRef.current;
@@ -93,6 +126,7 @@ export default function PlayerHost() {
     let cancelled = false;
     proxyTriedRef.current = false;
     originalSrcRef.current = item.src;
+    pendingResumeRef.current = item.kind === "video" ? usePlayer.getState().progressById[item.id] || 0 : 0;
     usePlayer.getState()._setLoading(true);
     usePlayer.getState()._setError(null);
 
@@ -115,14 +149,11 @@ export default function PlayerHost() {
           hls.on(Hls.Events.ERROR, (_e, data) => {
             if (!data.fatal) return;
             if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-              // Likely CORS/mixed-content on a direct stream — retry once via our proxy.
               if (!viaProxy && !proxyTriedRef.current) {
                 proxyTriedRef.current = true;
                 start(proxiedUrl(originalSrcRef.current));
               } else {
-                usePlayer
-                  .getState()
-                  ._setError("This live stream is offline, geo-blocked, or unreachable.");
+                usePlayer.getState()._setError("This live stream is offline, geo-blocked, or unreachable.");
               }
             } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
               hls.recoverMediaError();
@@ -146,12 +177,11 @@ export default function PlayerHost() {
         try {
           await el.play();
         } catch {
-          /* autoplay may be blocked until user gesture */
+          /* autoplay may be blocked until a user gesture */
         }
       }
     };
 
-    // HTTP origins must start proxied (mixed-content); HTTPS starts direct, proxy on failure.
     start(needsProxy(item.src) ? proxiedUrl(item.src) : item.src);
 
     return () => {
@@ -189,12 +219,106 @@ export default function PlayerHost() {
     usePlayer.getState()._clearSeek();
   }, [seekTo, isVideo]);
 
+  // Media Session — OS-level metadata + lock-screen / hardware-key controls.
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    if (!current) {
+      navigator.mediaSession.metadata = null;
+      return;
+    }
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: current.title,
+      artist: current.subtitle || "Aurora",
+      album: "Aurora Media House",
+      artwork: current.thumbnail ? [{ src: current.thumbnail, sizes: "512x512" }] : [],
+    });
+  }, [current]);
+
+  useEffect(() => {
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = current ? (isPlaying ? "playing" : "paused") : "none";
+    }
+  }, [isPlaying, current]);
+
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    const ms = navigator.mediaSession;
+    const S = usePlayer.getState;
+    const bind = (a: MediaSessionAction, h: MediaSessionActionHandler | null) => {
+      try {
+        ms.setActionHandler(a, h);
+      } catch {
+        /* unsupported action */
+      }
+    };
+    bind("play", () => S().resume());
+    bind("pause", () => S().pause());
+    bind("previoustrack", () => S().prev());
+    bind("nexttrack", () => S().next());
+    bind("seekbackward", (d) => S().seek(Math.max(0, S().progress - (d.seekOffset || 10))));
+    bind("seekforward", (d) => S().seek(S().progress + (d.seekOffset || 10)));
+    bind("seekto", (d) => d.seekTime != null && S().seek(d.seekTime));
+    bind("stop", () => S().stop());
+    return () =>
+      (["play", "pause", "previoustrack", "nexttrack", "seekbackward", "seekforward", "seekto", "stop"] as MediaSessionAction[]).forEach(
+        (a) => bind(a, null),
+      );
+  }, []);
+
+  // Keyboard shortcuts.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable))
+        return;
+      const S = usePlayer.getState();
+      if (!S.current) return;
+      switch (e.code) {
+        case "Space":
+          e.preventDefault();
+          S.toggle();
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          S.seek(S.progress + 10);
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          S.seek(Math.max(0, S.progress - 10));
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          S.setVolume(Math.min(1, S.volume + 0.05));
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          S.setVolume(Math.max(0, S.volume - 0.05));
+          break;
+        case "KeyM":
+          S.toggleMute();
+          break;
+        case "KeyN":
+          S.next();
+          break;
+        case "KeyP":
+          S.prev();
+          break;
+        case "KeyF":
+          if (S.current.kind === "video" || S.current.kind === "tv") S.setExpanded(!S.expanded);
+          break;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   return (
     <>
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <audio ref={audioRef} preload="auto" />
       <FloatingVideo videoRef={videoRef} visible={isVideo} />
       {current && !isVideo && <NowPlayingBar />}
+      <QueuePanel />
     </>
   );
 }

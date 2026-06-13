@@ -15,6 +15,8 @@ import {
   Maximize,
   SkipForward,
   AlertTriangle,
+  Heart,
+  PictureInPicture2,
 } from "lucide-react";
 
 /**
@@ -35,11 +37,24 @@ export default function FloatingVideo({
   const live = c?.isLive || !isFinite(s.duration) || s.duration === 0;
   const pct = s.duration > 0 && isFinite(s.duration) ? (s.progress / s.duration) * 100 : 0;
 
+  const favorited = !!c && s.favorites.some((f) => f.id === c.id);
+
   const goFullscreen = () => {
     const el = frameRef.current;
     if (!el) return;
     if (document.fullscreenElement) document.exitFullscreen();
     else el.requestFullscreen?.();
+  };
+
+  const togglePip = async () => {
+    const v = videoRef.current;
+    if (!v) return;
+    try {
+      if (document.pictureInPictureElement) await document.exitPictureInPicture();
+      else if (document.pictureInPictureEnabled) await v.requestPictureInPicture();
+    } catch {
+      /* PiP unsupported or blocked */
+    }
   };
 
   return (
@@ -161,6 +176,16 @@ export default function FloatingVideo({
 
             <button onClick={s.toggleMute} className="text-white" aria-label="Mute">
               {s.muted || s.volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </button>
+            <button
+              onClick={() => c && s.toggleFavorite(c)}
+              className={cn("transition", favorited ? "text-accent" : "text-white hover:text-accent")}
+              aria-label={favorited ? "Remove from favorites" : "Save to favorites"}
+            >
+              <Heart className="h-4 w-4" fill={favorited ? "currentColor" : "none"} />
+            </button>
+            <button onClick={togglePip} className="hidden text-white sm:block" aria-label="Picture in picture">
+              <PictureInPicture2 className="h-4 w-4" />
             </button>
             <button onClick={goFullscreen} className="text-white" aria-label="Fullscreen">
               <Maximize className="h-4 w-4" />
