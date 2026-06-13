@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #08080c;
+  --color-surface: #121219;
+  --color-surface-2: #1b1b27;
+  --color-fg: #f4f4f6;
+  --color-muted: #9a9aab;
+  --color-accent: #a855f7;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 100% -10%, rgba(168, 85, 247, 0.12), transparent 60%),
+    radial-gradient(1000px 500px at -10% 110%, rgba(6, 182, 212, 0.1), transparent 60%),
+    var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-accent) 40%, transparent);
+}
+
+/* Hide scrollbars on carousels while keeping them scrollable */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* App-wide slim scrollbar */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+  background-clip: content-box;
+}
+
+/* Range inputs (seek + volume) */
+input.seek {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  cursor: pointer;
+  background: linear-gradient(
+    to right,
+    #ffffff 0 var(--pct, 0%),
+    rgba(255, 255, 255, 0.18) var(--pct, 0%) 100%
+  );
+}
+input.seek:hover {
+  background: linear-gradient(
+    to right,
+    var(--color-accent) 0 var(--pct, 0%),
+    rgba(255, 255, 255, 0.18) var(--pct, 0%) 100%
+  );
+}
+input.seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #fff;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+input.seek:hover::-webkit-slider-thumb {
+  opacity: 1;
+}
+input.seek::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  opacity: 0;
+}
+input.seek:hover::-moz-range-thumb {
+  opacity: 1;
+}
+
+/* Live equalizer bars */
+.eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 9px;
+}
+.eq i {
+  width: 2px;
+  height: 3px;
+  background: currentColor;
+  animation: eq 0.9s ease-in-out infinite;
+}
+.eq i:nth-child(2) {
+  animation-delay: 0.3s;
+}
+.eq i:nth-child(3) {
+  animation-delay: 0.6s;
+}
+@keyframes eq {
+  0%,
+  100% {
+    height: 3px;
+  }
+  50% {
+    height: 9px;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.4s ease both;
+}
