@@ -46,9 +46,10 @@ function TvInner() {
       <div className="mb-6 flex items-start gap-2 rounded-xl border border-white/10 bg-surface/40 p-3 text-xs text-muted">
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
         <p>
-          Channels are public free-to-air streams from the open iptv-org directory. Availability
-          varies by region and over time — some may be geo-blocked or need a compatible browser.
-          Premium / 4K sports broadcasts (e.g. the World Cup) require separate licensing.
+          Channels are public free-to-air streams from the open iptv-org directory. Aurora routes
+          HTTP-only or CORS-blocked streams through a built-in proxy to maximise playback, but
+          availability still varies by region and over time — some may be geo-blocked. Premium / 4K
+          sports broadcasts (e.g. the World Cup) require separate licensing.
         </p>
       </div>
 

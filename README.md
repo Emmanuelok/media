@@ -109,11 +109,13 @@ station), so one player handles them all.
 
 ## ⚖️ A note on real vs. licensed content
 
-- **Live TV & Radio are real** and stream public, free-to-air sources. Because browsers only
-  play HTTPS streams whose origin allows cross-origin playback, **some public streams won't
-  play directly** (geo-blocking, HTTP-only, or missing CORS headers) — these surface a clear
-  error with a "try next" action. A production deployment would add a **server-side HLS proxy**
-  to normalize the rest.
+- **Live TV & Radio are real** and stream public, free-to-air sources. A built-in **server-side
+  stream proxy** (`/api/stream`) widens coverage by adding CORS headers, upgrading HTTP origins
+  to HTTPS, and rewriting HLS playlists — HTTP streams start proxied, and HTTPS streams fall back
+  to the proxy on a CORS failure. Streams that are genuinely offline or geo-blocked still surface
+  a clear error with a "try next" action. The proxy is SSRF-hardened (http(s) only;
+  private/loopback/metadata IPs blocked across redirects; media-only responses); a production
+  deployment should add rate limiting and ideally a CDN-host allowlist.
 - **Premium broadcasts** (e.g. the World Cup in 4K) require commercial licensing. Aurora ships
   the full 4K-capable player and sports-channel UI, fed by the free sports channels that are
   publicly available — drop in a licensed source and it plays through the same player.

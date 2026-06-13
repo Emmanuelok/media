@@ -79,8 +79,8 @@ export function parseM3U(text: string, category?: string): MediaItem[] {
         break;
       }
     }
-    // Browsers can only play https streams on a secure page.
-    if (!url || !url.startsWith("https://")) continue;
+    // Keep http(s) streams — HTTP origins are upgraded via the /api/stream proxy.
+    if (!url || !/^https?:\/\//i.test(url)) continue;
     if (seen.has(url)) continue;
     seen.add(url);
 

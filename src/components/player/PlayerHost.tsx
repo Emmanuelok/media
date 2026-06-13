@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import type HlsType from "hls.js";
 import { usePlayer } from "@/lib/store";
 import { isHls } from "@/lib/utils";
+import { proxiedUrl, needsProxy } from "@/lib/stream";
 import NowPlayingBar from "./NowPlayingBar";
 import FloatingVideo from "./FloatingVideo";
 
@@ -16,6 +17,8 @@ export default function PlayerHost() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<HlsType | null>(null);
+  const originalSrcRef = useRef<string>("");
+  const proxyTriedRef = useRef(false);
 
   const current = usePlayer((s) => s.current);
   const isPlaying = usePlayer((s) => s.isPlaying);
@@ -41,8 +44,11 @@ export default function PlayerHost() {
     const onWaiting = () => S()._setLoading(true);
     const onPlaying = () => S()._setLoading(false);
     const onEnded = () => S().next();
-    const onErr = () =>
+    const onErr = () => {
+      // HLS errors (incl. proxy fallback) are handled by the hls.js error handler.
+      if (hlsRef.current) return;
       S()._setError("Playback failed — this source may be offline, geo-blocked, or HTTP-only.");
+    };
 
     els.forEach((el) => {
       el.addEventListener("timeupdate", onTime);
@@ -85,16 +91,20 @@ export default function PlayerHost() {
     if (!el || !item) return;
 
     let cancelled = false;
+    proxyTriedRef.current = false;
+    originalSrcRef.current = item.src;
     usePlayer.getState()._setLoading(true);
     usePlayer.getState()._setError(null);
 
-    (async () => {
+    const wantsHls = item.streamType === "hls" || isHls(item.src);
+    const native = !!el.canPlayType("application/vnd.apple.mpegurl");
+
+    const start = async (src: string) => {
       if (hlsRef.current) {
         hlsRef.current.destroy();
         hlsRef.current = null;
       }
-      const wantsHls = item.streamType === "hls" || isHls(item.src);
-      const native = el.canPlayType("application/vnd.apple.mpegurl");
+      const viaProxy = src.startsWith("/api/stream");
 
       if (wantsHls && !native) {
         const { default: Hls } = await import("hls.js");
@@ -104,21 +114,30 @@ export default function PlayerHost() {
           hlsRef.current = hls;
           hls.on(Hls.Events.ERROR, (_e, data) => {
             if (!data.fatal) return;
-            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
-            else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
-            else
-              usePlayer
-                .getState()
-                ._setError("This live stream is unavailable or blocked by CORS.");
+            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+              // Likely CORS/mixed-content on a direct stream — retry once via our proxy.
+              if (!viaProxy && !proxyTriedRef.current) {
+                proxyTriedRef.current = true;
+                start(proxiedUrl(originalSrcRef.current));
+              } else {
+                usePlayer
+                  .getState()
+                  ._setError("This live stream is offline, geo-blocked, or unreachable.");
+              }
+            } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+              hls.recoverMediaError();
+            } else {
+              usePlayer.getState()._setError("This live stream could not be played.");
+            }
           });
-          hls.loadSource(item.src);
+          hls.loadSource(src);
           hls.attachMedia(el);
         } else {
-          el.src = item.src;
+          el.src = src;
           el.load();
         }
       } else {
-        el.src = item.src;
+        el.src = src;
         el.load();
       }
 
@@ -130,7 +149,10 @@ export default function PlayerHost() {
           /* autoplay may be blocked until user gesture */
         }
       }
-    })();
+    };
+
+    // HTTP origins must start proxied (mixed-content); HTTPS starts direct, proxy on failure.
+    start(needsProxy(item.src) ? proxiedUrl(item.src) : item.src);
 
     return () => {
       cancelled = true;
