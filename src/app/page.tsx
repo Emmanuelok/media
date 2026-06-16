@@ -9,6 +9,7 @@ import { FEATURED_TV } from "@/lib/tv";
 import { topRadio } from "@/lib/radio";
 import { useUI } from "@/lib/ui";
 import { usePlayer } from "@/lib/store";
+import { DEFAULT_ROUTINES } from "@/lib/routines";
 
 export default function Home() {
   const openConcierge = useUI((s) => s.openConcierge);
@@ -55,6 +56,27 @@ export default function Home() {
               <Radio className="h-4 w-4" /> Live Radio
             </Link>
           </div>
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-white sm:text-xl">One-tap routines</h2>
+          <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+            Auto-pilot
+          </span>
+        </div>
+        <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+          {DEFAULT_ROUTINES.map((r) => (
+            <button
+              key={r.id}
+              onClick={() => openConcierge(r.prompt, true)}
+              title={r.description}
+              className="flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition hover:border-accent/50 hover:bg-white/10"
+            >
+              <span className="text-base">{r.emoji}</span> {r.title}
+            </button>
+          ))}
         </div>
       </section>
 

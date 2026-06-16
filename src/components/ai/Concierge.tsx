@@ -54,6 +54,8 @@ const CHIP_ICON = { tv: Tv, radio: Radio, video: Clapperboard, music: Music2 };
 export default function Concierge() {
   const open = useUI((s) => s.conciergeOpen);
   const seed = useUI((s) => s.conciergeSeed);
+  const conciergeAutoRun = useUI((s) => s.conciergeAutoRun);
+  const conciergeRunId = useUI((s) => s.conciergeRunId);
   const close = useUI((s) => s.closeConcierge);
   const aiModel = useSettings((s) => s.aiModel);
   const play = usePlayer((s) => s.play);
@@ -66,10 +68,21 @@ export default function Concierge() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const ranRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (open && seed) setInput(seed);
   }, [open, seed]);
+
+  // Auto-run a routine: open in Auto-pilot mode and send the prompt once.
+  useEffect(() => {
+    if (open && conciergeAutoRun && seed && ranRef.current !== conciergeRunId) {
+      ranRef.current = conciergeRunId;
+      setMode("auto");
+      send(seed);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, conciergeAutoRun, conciergeRunId, seed]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });

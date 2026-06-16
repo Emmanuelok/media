@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles, Settings } from "lucide-react";
+import { Sparkles, Settings, Wand2 } from "lucide-react";
 import { NAV } from "./nav";
 import { usePlayer } from "@/lib/store";
 import { useUI } from "@/lib/ui";
@@ -61,9 +61,24 @@ export default function Sidebar() {
       </button>
 
       <Link
-        href="/settings"
+        href="/routines"
+        aria-current={pathname.startsWith("/routines") ? "page" : undefined}
         className={cn(
           "mt-2 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
+          pathname.startsWith("/routines")
+            ? "bg-white/10 text-white"
+            : "text-muted hover:bg-white/5 hover:text-white",
+        )}
+      >
+        <Wand2 className={cn("h-5 w-5", pathname.startsWith("/routines") && "text-accent")} />
+        Routines
+      </Link>
+
+      <Link
+        href="/settings"
+        aria-current={pathname.startsWith("/settings") ? "page" : undefined}
+        className={cn(
+          "mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
           pathname.startsWith("/settings")
             ? "bg-white/10 text-white"
             : "text-muted hover:bg-white/5 hover:text-white",
