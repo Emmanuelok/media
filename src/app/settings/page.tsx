@@ -41,6 +41,8 @@ export default function SettingsPage() {
 
   const autoplay = usePlayer((s) => s.autoplay);
   const setAutoplay = usePlayer((s) => s.setAutoplay);
+  const autoDj = usePlayer((s) => s.autoDj);
+  const setAutoDj = usePlayer((s) => s.setAutoDj);
   const sleepAt = usePlayer((s) => s.sleepAt);
   const setSleepTimer = usePlayer((s) => s.setSleepTimer);
   const clearFavorites = usePlayer((s) => s.clearFavorites);
@@ -109,6 +111,32 @@ export default function SettingsPage() {
                 className={cn(
                   "absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all",
                   autoplay ? "left-[22px]" : "left-0.5",
+                )}
+              />
+            </button>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
+            <div>
+              <p className="text-sm font-medium text-white">Auto-DJ (infinite queue)</p>
+              <p className="text-xs text-muted">
+                When the queue ends, keep playing similar music & video automatically.
+              </p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={autoDj}
+              aria-label="Auto-DJ"
+              onClick={() => setAutoDj(!autoDj)}
+              className={cn(
+                "relative h-6 w-11 shrink-0 rounded-full transition",
+                autoDj ? "bg-accent" : "bg-white/15",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all",
+                  autoDj ? "left-[22px]" : "left-0.5",
                 )}
               />
             </button>

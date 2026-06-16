@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { MediaItem } from "./types";
+import { VIDEOS, TRACKS } from "./catalog";
 
 export type RepeatMode = "off" | "all" | "one";
 
@@ -13,6 +14,16 @@ function shuffled<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+/** Auto-DJ: pick more on-demand items of the same kind to extend the queue. */
+function autoDjPool(current: MediaItem, queue: MediaItem[]): MediaItem[] {
+  if (current.kind !== "music" && current.kind !== "video") return [];
+  const have = new Set(queue.map((q) => q.id));
+  const candidates = (current.kind === "music" ? TRACKS : VIDEOS).filter((p) => !have.has(p.id));
+  const sameCat = candidates.filter((p) => p.category === current.category);
+  const rest = candidates.filter((p) => p.category !== current.category);
+  return [...shuffled(sameCat), ...shuffled(rest)].slice(0, 10);
 }
 
 interface PlayerState {
@@ -35,6 +46,8 @@ interface PlayerState {
   shuffle: boolean;
   repeat: RepeatMode;
   autoplay: boolean;
+  /** Auto-DJ: when the queue ends, append more on-demand items and keep playing. */
+  autoDj: boolean;
   /** Epoch ms at which playback should auto-pause, or null. Transient. */
   sleepAt: number | null;
 
@@ -65,6 +78,7 @@ interface PlayerState {
   cycleRepeat: () => void;
   toggleFavorite: (item: MediaItem) => void;
   setAutoplay: (v: boolean) => void;
+  setAutoDj: (v: boolean) => void;
   setSleepTimer: (minutes: number | null) => void;
   clearFavorites: () => void;
   clearHistory: () => void;
@@ -122,6 +136,7 @@ export const usePlayer = create<PlayerState>()(
         shuffle: false,
         repeat: "off",
         autoplay: true,
+        autoDj: false,
         sleepAt: null,
         recents: [],
         favorites: [],
@@ -177,7 +192,7 @@ export const usePlayer = create<PlayerState>()(
         },
 
         ended: () => {
-          const { repeat, index, queue, autoplay } = get();
+          const { repeat, index, queue, autoplay, autoDj, current } = get();
           if (!autoplay) {
             set({ isPlaying: false });
             return;
@@ -193,6 +208,14 @@ export const usePlayer = create<PlayerState>()(
           if (repeat === "all") {
             apply(0);
             return;
+          }
+          if (autoDj && current) {
+            const more = autoDjPool(current, queue);
+            if (more.length) {
+              set({ queue: [...queue, ...more] });
+              apply(index + 1);
+              return;
+            }
           }
           set({ isPlaying: false });
         },
@@ -252,6 +275,7 @@ export const usePlayer = create<PlayerState>()(
           });
         },
         setAutoplay: (v) => set({ autoplay: v }),
+        setAutoDj: (v) => set({ autoDj: v }),
         setSleepTimer: (m) => set({ sleepAt: m == null ? null : Date.now() + m * 60000 }),
         clearFavorites: () => set({ favorites: [] }),
         clearHistory: () => set({ recents: [], progressById: {} }),
@@ -286,6 +310,7 @@ export const usePlayer = create<PlayerState>()(
         shuffle: s.shuffle,
         repeat: s.repeat,
         autoplay: s.autoplay,
+        autoDj: s.autoDj,
       }),
     },
   ),
