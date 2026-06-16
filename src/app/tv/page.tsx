@@ -18,8 +18,11 @@ import { Chips } from "@/components/ui/Chips";
 function TvInner() {
   const sp = useSearchParams();
   const q = (sp.get("q") || "").toLowerCase();
+  const country = (sp.get("country") || "").toLowerCase();
   const matchedCat = TV_CATEGORIES.find((c) => c.id === q);
-  const [sel, setSel] = useState(matchedCat ? `cat:${matchedCat.id}` : "featured");
+  const [sel, setSel] = useState(
+    country ? `country:${country}` : matchedCat ? `cat:${matchedCat.id}` : "featured",
+  );
 
   const catChips = [
     { id: "featured", label: "Featured", emoji: "⭐" },

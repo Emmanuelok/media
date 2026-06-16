@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles, Settings, Wand2 } from "lucide-react";
+import { Sparkles, Settings, Wand2, Globe } from "lucide-react";
 import { NAV } from "./nav";
 import { usePlayer } from "@/lib/store";
 import { useUI } from "@/lib/ui";
@@ -59,6 +59,20 @@ export default function Sidebar() {
       >
         <Sparkles className="h-4 w-4" /> Ask Aurora AI
       </button>
+
+      <Link
+        href="/channels"
+        aria-current={pathname.startsWith("/channels") ? "page" : undefined}
+        className={cn(
+          "mt-2 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
+          pathname.startsWith("/channels")
+            ? "bg-white/10 text-white"
+            : "text-muted hover:bg-white/5 hover:text-white",
+        )}
+      >
+        <Globe className={cn("h-5 w-5", pathname.startsWith("/channels") && "text-accent")} />
+        Networks
+      </Link>
 
       <Link
         href="/routines"
