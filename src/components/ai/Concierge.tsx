@@ -15,6 +15,7 @@ import {
   Moon,
   Heart,
   Compass,
+  ExternalLink,
 } from "lucide-react";
 import { useUI } from "@/lib/ui";
 import { useSettings } from "@/lib/settings";
@@ -298,7 +299,8 @@ export default function Concierge() {
                 )}
 
                 {/* Agent navigate/search suggestions */}
-                {m.actions && m.actions.some((a) => a.type === "navigate" || a.type === "search") && (
+                {m.actions &&
+                  m.actions.some((a) => a.type === "navigate" || a.type === "search" || a.type === "watch") && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {m.actions.map((a, ai) => {
                       if (a.type === "search") {
@@ -322,6 +324,18 @@ export default function Concierge() {
                           >
                             <Compass className="h-3.5 w-3.5" /> Open {a.path}
                           </button>
+                        );
+                      if (a.type === "watch")
+                        return (
+                          <a
+                            key={ai}
+                            href={a.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white hover:bg-white/20"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" /> {a.label}
+                          </a>
                         );
                       return null;
                     })}

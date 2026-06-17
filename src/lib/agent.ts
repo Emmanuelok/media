@@ -1,5 +1,6 @@
 import { LOCAL_INDEX } from "./catalog";
 import { localFallback } from "./concierge";
+import { BROADCASTER_URLS } from "./broadcasters";
 import type { MediaItem } from "./types";
 
 // The Aurora agent: Claude searches across the catalog, live radio, and live TV,
@@ -12,7 +13,8 @@ export type AgentAction =
   | { type: "navigate"; path: string }
   | { type: "set_sleep_timer"; minutes: number }
   | { type: "like"; ids: string[] }
-  | { type: "search"; kind: "tv" | "radio" | "video" | "music"; q: string };
+  | { type: "search"; kind: "tv" | "radio" | "video" | "music"; q: string }
+  | { type: "watch"; label: string; url: string };
 
 export interface AgentPlan {
   message: string;
@@ -21,7 +23,18 @@ export interface AgentPlan {
   items: MediaItem[];
 }
 
-const NAV_PATHS = new Set(["/", "/video", "/music", "/tv", "/radio", "/library", "/search", "/settings"]);
+const NAV_PATHS = new Set([
+  "/",
+  "/video",
+  "/music",
+  "/tv",
+  "/radio",
+  "/library",
+  "/search",
+  "/settings",
+  "/channels",
+  "/routines",
+]);
 const KINDS = new Set(["tv", "radio", "video", "music"]);
 
 function asRecord(v: unknown): Record<string, unknown> | null {
@@ -52,6 +65,13 @@ export function validateActions(raw: unknown): AgentAction[] {
       KINDS.has(a.kind)
     )
       out.push({ type: "search", kind: a.kind as "tv" | "radio" | "video" | "music", q: a.q.slice(0, 80) });
+    else if (
+      t === "watch" &&
+      typeof a.url === "string" &&
+      typeof a.label === "string" &&
+      BROADCASTER_URLS.has(a.url)
+    )
+      out.push({ type: "watch", label: a.label.slice(0, 80), url: a.url });
     if (out.length >= 12) break;
   }
   return out;
@@ -93,6 +113,8 @@ export function agentFallback(prompt: string): AgentPlan {
   if (items.length) actions.push({ type: "play", ids: items.map((i) => i.id) });
   for (const q of base.queries) actions.push({ type: "search", kind: q.kind, q: q.q });
   if (/\b(sleep|bedtime|nap|wind down)\b/i.test(prompt)) actions.push({ type: "set_sleep_timer", minutes: 30 });
+  if (/\b(watch|where|world ?cup|broadcast|rights|channel)\b/i.test(prompt) && !actions.some((a) => a.type === "navigate"))
+    actions.push({ type: "navigate", path: "/channels" });
 
   const message = items.length
     ? "Queued some matches and lined up live options. Connect an ANTHROPIC_API_KEY for full autonomous control."

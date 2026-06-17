@@ -228,3 +228,25 @@ export function broadcasterCountries(): { country: string; flag: string; iptvCod
   }
   return [...map.values()].sort((a, z) => a.country.localeCompare(z.country));
 }
+
+/** Query the directory by country (name or ISO code), free-text, and/or category. */
+export function findBroadcasters(opts: {
+  country?: string;
+  query?: string;
+  category?: BroadcasterCategory;
+  limit?: number;
+}): Broadcaster[] {
+  const cq = opts.country?.trim().toLowerCase();
+  const q = opts.query?.trim().toLowerCase();
+  return BROADCASTERS.filter((x) => {
+    if (opts.category && x.category !== opts.category) return false;
+    // A 2-letter input is treated as an exact ISO code (avoids "us" matching "aUStralia").
+    if (cq && !(cq.length === 2 ? x.iptvCode === cq : x.country.toLowerCase().includes(cq))) return false;
+    if (q && !`${x.name} ${x.country}`.toLowerCase().includes(q)) return false;
+    return true;
+  }).slice(0, opts.limit ?? 12);
+}
+
+/** Allowlist of official URLs — used to validate agent "watch" actions. */
+export const BROADCASTER_URLS = new Set(BROADCASTERS.map((x) => x.url));
+

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { validateActions, resolveItems, searchCatalog, agentFallback } from "@/lib/agent";
 import { LOCAL_INDEX } from "@/lib/catalog";
+import { BROADCASTERS } from "@/lib/broadcasters";
 import type { MediaItem } from "@/lib/types";
 
 describe("validateActions", () => {
@@ -39,6 +40,16 @@ describe("validateActions", () => {
   it("returns [] for non-arrays", () => {
     expect(validateActions(null)).toEqual([]);
     expect(validateActions("x")).toEqual([]);
+  });
+
+  it("accepts watch actions only for known broadcaster urls", () => {
+    const goodUrl = BROADCASTERS[0].url;
+    const out = validateActions([
+      { type: "watch", label: "Watch official", url: goodUrl },
+      { type: "watch", label: "Sketchy", url: "https://evil.example.com" },
+    ]);
+    expect(out).toContainEqual({ type: "watch", label: "Watch official", url: goodUrl });
+    expect(out.some((a) => a.type === "watch" && a.url === "https://evil.example.com")).toBe(false);
   });
 });
 

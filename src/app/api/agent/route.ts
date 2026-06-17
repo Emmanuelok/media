@@ -8,6 +8,7 @@ import {
 } from "@/lib/agent";
 import { topRadio, radioByTag, radioByCountry, searchRadio } from "@/lib/radio";
 import { tvByCategory, tvByCountry, FEATURED_TV } from "@/lib/tv";
+import { findBroadcasters } from "@/lib/broadcasters";
 import type { MediaItem } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -30,7 +31,11 @@ Guidelines:
 - Use "search" actions ({kind,q}) to open a live directory page when that fits best (e.g. broad
   "live news" or "world cup" -> kind "tv"; a radio genre -> kind "radio").
 - Use "set_sleep_timer" (minutes) for wind-down/sleep requests; "like" to save items; "navigate"
-  to a known path (/, /video, /music, /tv, /radio, /library, /search, /settings).
+  to a known path (/, /video, /music, /tv, /radio, /library, /channels, /routines, /search, /settings).
+- For "where can I watch X" / live-sports rights questions (e.g. the World Cup), call where_to_watch
+  (by country and/or query). Then include "watch" actions ({label, url}) using the EXACT urls it
+  returns (only those are accepted), and/or navigate to "/channels". Free-to-air results can also be
+  opened via a "search" tv action or by navigating to "/tv".
 - Keep the message warm and brief (1-2 sentences) describing what you set up.`;
 
 const tools: Anthropic.Tool[] = [
@@ -58,6 +63,15 @@ const tools: Anthropic.Tool[] = [
     },
   },
   {
+    name: "where_to_watch",
+    description:
+      "Look up official broadcasters (incl. World Cup rights-holders) by country (name or 2-letter code), free-text query, and/or category. Returns name, country, access (free/provider) and the official url.",
+    input_schema: {
+      type: "object",
+      properties: { country: { type: "string" }, query: { type: "string" }, category: { type: "string" } },
+    },
+  },
+  {
     name: "present_plan",
     description: "Call once when ready to act. Provide a short message and the actions to perform.",
     input_schema: {
@@ -69,12 +83,17 @@ const tools: Anthropic.Tool[] = [
           items: {
             type: "object",
             properties: {
-              type: { type: "string", enum: ["play", "navigate", "set_sleep_timer", "like", "search"] },
+              type: {
+                type: "string",
+                enum: ["play", "navigate", "set_sleep_timer", "like", "search", "watch"],
+              },
               ids: { type: "array", items: { type: "string" } },
               path: { type: "string" },
               minutes: { type: "number" },
               kind: { type: "string", enum: ["tv", "radio", "video", "music"] },
               q: { type: "string" },
+              label: { type: "string" },
+              url: { type: "string" },
             },
             required: ["type"],
           },
@@ -117,6 +136,14 @@ async function runTool(name: string, input: unknown, known: Map<string, MediaIte
         : country
           ? await tvByCountry(country.toLowerCase(), 12)
           : FEATURED_TV.slice();
+    } else if (name === "where_to_watch") {
+      const cat = str(input, "category");
+      const results = findBroadcasters({
+        country: str(input, "country"),
+        query: str(input, "query"),
+        category: cat === "sports" || cat === "news" || cat === "general" ? cat : undefined,
+      }).map((x) => ({ name: x.name, country: x.country, access: x.access, url: x.url }));
+      return JSON.stringify({ results });
     } else {
       return JSON.stringify({ error: "unknown tool" });
     }
