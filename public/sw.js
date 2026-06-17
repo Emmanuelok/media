@@ -28,6 +28,36 @@ self.addEventListener("message", (event) => {
   if (event.data === "SKIP_WAITING") self.skipWaiting();
 });
 
+// Focus (or open) Aurora when a notification is clicked.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const c of clients) {
+        if ("focus" in c) return c.focus();
+      }
+      return self.clients.openWindow ? self.clients.openWindow("/") : undefined;
+    }),
+  );
+});
+
+// Foundation for server-side web push (requires VAPID + a backend to send).
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = {};
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Aurora", {
+      body: data.body || "",
+      icon: "/icon.svg",
+      tag: data.tag || "aurora",
+    }),
+  );
+});
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;

@@ -40,6 +40,8 @@ export default function SettingsPage() {
   const setAccent = useSettings((s) => s.setAccent);
   const aiNote = useSettings((s) => s.aiNote);
   const setAiNote = useSettings((s) => s.setAiNote);
+  const notifyRoutines = useSettings((s) => s.notifyRoutines);
+  const setNotifyRoutines = useSettings((s) => s.setNotifyRoutines);
 
   const autoplay = usePlayer((s) => s.autoplay);
   const setAutoplay = usePlayer((s) => s.setAutoplay);
@@ -51,6 +53,16 @@ export default function SettingsPage() {
   const clearHistory = usePlayer((s) => s.clearHistory);
   const favCount = usePlayer((s) => s.favorites.length);
   const recCount = usePlayer((s) => s.recents.length);
+
+  const toggleNotify = async () => {
+    if (notifyRoutines) return setNotifyRoutines(false);
+    if (typeof Notification === "undefined") return setNotifyRoutines(false);
+    const perm =
+      Notification.permission === "default"
+        ? await Notification.requestPermission()
+        : Notification.permission;
+    setNotifyRoutines(perm === "granted");
+  };
 
   return (
     <div className="animate-fade-up max-w-2xl">
@@ -194,6 +206,35 @@ export default function SettingsPage() {
                 );
               })}
             </div>
+          </div>
+        </Section>
+
+        <Section title="Notifications" desc="Reminders while Aurora is open in a tab.">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-white">Routine reminders</p>
+              <p className="text-xs text-muted">
+                Get a desktop notification when a scheduled routine starts. Background firing while
+                fully closed needs a server + push (deploy-time).
+              </p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={notifyRoutines}
+              aria-label="Routine reminders"
+              onClick={toggleNotify}
+              className={cn(
+                "relative h-6 w-11 shrink-0 rounded-full transition",
+                notifyRoutines ? "bg-accent" : "bg-white/15",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all",
+                  notifyRoutines ? "left-[22px]" : "left-0.5",
+                )}
+              />
+            </button>
           </div>
         </Section>
 

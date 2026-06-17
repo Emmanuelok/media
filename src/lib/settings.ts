@@ -27,9 +27,11 @@ interface SettingsState {
   aiModel: AiModelId;
   accent: string;
   aiNote: string;
+  notifyRoutines: boolean;
   setAiModel: (m: AiModelId) => void;
   setAccent: (a: string) => void;
   setAiNote: (n: string) => void;
+  setNotifyRoutines: (v: boolean) => void;
 }
 
 export const useSettings = create<SettingsState>()(
@@ -38,9 +40,11 @@ export const useSettings = create<SettingsState>()(
       aiModel: "claude-opus-4-8",
       accent: "#a855f7",
       aiNote: "",
+      notifyRoutines: false,
       setAiModel: (m) => set({ aiModel: m }),
       setAccent: (a) => set({ accent: a }),
       setAiNote: (n) => set({ aiNote: n.slice(0, 400) }),
+      setNotifyRoutines: (v) => set({ notifyRoutines: v }),
     }),
     { name: "aurora-settings", storage: createJSONStorage(() => localStorage) },
   ),

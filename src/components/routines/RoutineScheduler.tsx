@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRoutines } from "@/lib/routines-store";
 import { isScheduleDue, todayKey } from "@/lib/routines";
 import { useUI } from "@/lib/ui";
+import { useSettings } from "@/lib/settings";
 
 /**
  * Fires scheduled routines at their local time while Aurora is open. Web apps
@@ -20,6 +21,21 @@ export default function RoutineScheduler() {
       if (due) {
         markFired(due.id, todayKey(now));
         openConcierge(due.prompt, true);
+        if (
+          useSettings.getState().notifyRoutines &&
+          typeof Notification !== "undefined" &&
+          Notification.permission === "granted"
+        ) {
+          try {
+            new Notification("Aurora", {
+              body: `Starting your routine: ${due.label}`,
+              icon: "/icon.svg",
+              tag: "aurora-routine",
+            });
+          } catch {
+            /* notification may be blocked */
+          }
+        }
       }
     };
     tick();
