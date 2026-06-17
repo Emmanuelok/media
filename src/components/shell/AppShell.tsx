@@ -7,6 +7,7 @@ import MobileNav from "./MobileNav";
 import PlayerHost from "@/components/player/PlayerHost";
 import Concierge from "@/components/ai/Concierge";
 import ServiceWorkerRegistrar from "@/components/pwa/ServiceWorkerRegistrar";
+import RoutineScheduler from "@/components/routines/RoutineScheduler";
 import { usePlayer } from "@/lib/store";
 import { useSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <PlayerHost />
       <Concierge />
       <ServiceWorkerRegistrar />
+      <RoutineScheduler />
     </div>
   );
 }

@@ -11,6 +11,30 @@ export interface Routine {
   description?: string;
 }
 
+/** A routine scheduled to auto-run at a local time of day (while Aurora is open). */
+export interface Schedule {
+  id: string;
+  label: string;
+  prompt: string;
+  time: string; // "HH:MM" local
+  enabled: boolean;
+  lastFired: string | null; // local date key, so it fires at most once per day
+}
+
+/** Local YYYY-MM-DD key (not UTC) so "once per day" matches the user's clock. */
+export function todayKey(now: Date): string {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+    now.getDate(),
+  ).padStart(2, "0")}`;
+}
+
+/** Is this schedule due to fire at `now`? (enabled, matches the minute, not yet fired today) */
+export function isScheduleDue(s: Schedule, now: Date): boolean {
+  if (!s.enabled) return false;
+  const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  return s.time === hhmm && s.lastFired !== todayKey(now);
+}
+
 export const DEFAULT_ROUTINES: Routine[] = [
   {
     id: "focus",
