@@ -42,6 +42,8 @@ export default function SettingsPage() {
   const setAiNote = useSettings((s) => s.setAiNote);
   const notifyRoutines = useSettings((s) => s.notifyRoutines);
   const setNotifyRoutines = useSettings((s) => s.setNotifyRoutines);
+  const forceProxyTv = useSettings((s) => s.forceProxyTv);
+  const setForceProxyTv = useSettings((s) => s.setForceProxyTv);
 
   const autoplay = usePlayer((s) => s.autoplay);
   const setAutoplay = usePlayer((s) => s.setAutoplay);
@@ -232,6 +234,35 @@ export default function SettingsPage() {
                 className={cn(
                   "absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all",
                   notifyRoutines ? "left-[22px]" : "left-0.5",
+                )}
+              />
+            </button>
+          </div>
+        </Section>
+
+        <Section title="Live TV" desc="If many channels fail to play, try routing them through the proxy.">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-white">Force proxy for live TV</p>
+              <p className="text-xs text-muted">
+                Routes every channel through Aurora&apos;s stream proxy — fixes many CORS-blocked
+                channels (uses more bandwidth; geo-blocked streams still won&apos;t play).
+              </p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={forceProxyTv}
+              aria-label="Force proxy for live TV"
+              onClick={() => setForceProxyTv(!forceProxyTv)}
+              className={cn(
+                "relative h-6 w-11 shrink-0 rounded-full transition",
+                forceProxyTv ? "bg-accent" : "bg-white/15",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all",
+                  forceProxyTv ? "left-[22px]" : "left-0.5",
                 )}
               />
             </button>

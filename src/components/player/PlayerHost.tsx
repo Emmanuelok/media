@@ -5,6 +5,7 @@ import type HlsType from "hls.js";
 import { usePlayer } from "@/lib/store";
 import { isHls } from "@/lib/utils";
 import { proxiedUrl, needsProxy } from "@/lib/stream";
+import { useSettings } from "@/lib/settings";
 import NowPlayingBar from "./NowPlayingBar";
 import FloatingVideo from "./FloatingVideo";
 import QueuePanel from "./QueuePanel";
@@ -31,6 +32,7 @@ export default function PlayerHost() {
   const muted = usePlayer((s) => s.muted);
   const seekTo = usePlayer((s) => s.seekTo);
   const sleepAt = usePlayer((s) => s.sleepAt);
+  const levelRequest = usePlayer((s) => s.levelRequest);
 
   const isVideo = !!current && (current.kind === "video" || current.kind === "tv");
 
@@ -145,8 +147,25 @@ export default function PlayerHost() {
         const { default: Hls } = await import("hls.js");
         if (cancelled) return;
         if (Hls.isSupported()) {
-          const hls = new Hls({ enableWorker: true, lowLatencyMode: true, backBufferLength: 60 });
+          const hls = new Hls({
+            enableWorker: true,
+            lowLatencyMode: false,
+            capLevelToPlayerSize: false, // don't cap quality to the small player
+            abrEwmaDefaultEstimate: 1_500_000, // start at a higher bitrate, not the lowest
+            maxBufferLength: 30,
+            backBufferLength: 90,
+          });
           hlsRef.current = hls;
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            usePlayer
+              .getState()
+              ._setQualities(
+                hls.levels.map((l, i) => ({ index: i, height: l.height || 0, bitrate: l.bitrate || 0 })),
+              );
+          });
+          hls.on(Hls.Events.LEVEL_SWITCHED, (_e, data) =>
+            usePlayer.getState()._setCurrentQuality(data.level),
+          );
           hls.on(Hls.Events.ERROR, (_e, data) => {
             if (!data.fatal) return;
             if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
@@ -183,7 +202,9 @@ export default function PlayerHost() {
       }
     };
 
-    start(needsProxy(item.src) ? proxiedUrl(item.src) : item.src);
+    // HTTP origins must start proxied; "Force proxy for live TV" routes TV through it too (beats CORS).
+    const forceProxy = item.kind === "tv" && wantsHls && useSettings.getState().forceProxyTv;
+    start(needsProxy(item.src) || forceProxy ? proxiedUrl(item.src) : item.src);
 
     return () => {
       cancelled = true;
@@ -235,6 +256,19 @@ export default function PlayerHost() {
     const t = setTimeout(fire, ms);
     return () => clearTimeout(t);
   }, [sleepAt]);
+
+  // Apply a chosen HLS quality level (-1 = auto / ABR).
+  useEffect(() => {
+    if (levelRequest == null) return;
+    if (hlsRef.current) {
+      try {
+        hlsRef.current.currentLevel = levelRequest;
+      } catch {
+        /* level may be unavailable */
+      }
+    }
+    usePlayer.getState()._clearLevelRequest();
+  }, [levelRequest]);
 
   // Media Session — OS-level metadata + lock-screen / hardware-key controls.
   useEffect(() => {

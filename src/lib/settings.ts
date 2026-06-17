@@ -28,10 +28,12 @@ interface SettingsState {
   accent: string;
   aiNote: string;
   notifyRoutines: boolean;
+  forceProxyTv: boolean;
   setAiModel: (m: AiModelId) => void;
   setAccent: (a: string) => void;
   setAiNote: (n: string) => void;
   setNotifyRoutines: (v: boolean) => void;
+  setForceProxyTv: (v: boolean) => void;
 }
 
 export const useSettings = create<SettingsState>()(
@@ -41,10 +43,12 @@ export const useSettings = create<SettingsState>()(
       accent: "#a855f7",
       aiNote: "",
       notifyRoutines: false,
+      forceProxyTv: false,
       setAiModel: (m) => set({ aiModel: m }),
       setAccent: (a) => set({ accent: a }),
       setAiNote: (n) => set({ aiNote: n.slice(0, 400) }),
       setNotifyRoutines: (v) => set({ notifyRoutines: v }),
+      setForceProxyTv: (v) => set({ forceProxyTv: v }),
     }),
     { name: "aurora-settings", storage: createJSONStorage(() => localStorage) },
   ),

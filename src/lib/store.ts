@@ -43,6 +43,10 @@ interface PlayerState {
   error: string | null;
   expanded: boolean; // video theater overlay
   seekTo: number | null; // imperative seek request consumed by PlayerHost
+  qualities: { index: number; height: number; bitrate: number }[];
+  currentQuality: number; // actual playing HLS level index, or -1
+  pinnedQuality: number; // user's menu choice (-1 = auto)
+  levelRequest: number | null; // applied by PlayerHost then cleared
   shuffle: boolean;
   repeat: RepeatMode;
   autoplay: boolean;
@@ -72,6 +76,7 @@ interface PlayerState {
   setVolume: (v: number) => void;
   toggleMute: () => void;
   seek: (t: number) => void;
+  setQuality: (index: number) => void;
   setExpanded: (e: boolean) => void;
   stop: () => void;
   toggleShuffle: () => void;
@@ -91,6 +96,9 @@ interface PlayerState {
   _setLoading: (l: boolean) => void;
   _setError: (e: string | null) => void;
   _clearSeek: () => void;
+  _setQualities: (q: { index: number; height: number; bitrate: number }[]) => void;
+  _setCurrentQuality: (i: number) => void;
+  _clearLevelRequest: () => void;
   _saveProgress: (id: string, time: number, duration: number) => void;
 }
 
@@ -114,6 +122,10 @@ export const usePlayer = create<PlayerState>()(
           buffered: 0,
           loading: true,
           error: null,
+          qualities: [],
+          currentQuality: -1,
+          pinnedQuality: -1,
+          levelRequest: null,
           expanded: item.kind === "video" ? get().expanded : false,
         });
       };
@@ -133,6 +145,10 @@ export const usePlayer = create<PlayerState>()(
         error: null,
         expanded: false,
         seekTo: null,
+        qualities: [],
+        currentQuality: -1,
+        pinnedQuality: -1,
+        levelRequest: null,
         shuffle: false,
         repeat: "off",
         autoplay: true,
@@ -166,6 +182,10 @@ export const usePlayer = create<PlayerState>()(
             buffered: 0,
             loading: true,
             error: null,
+            qualities: [],
+            currentQuality: -1,
+            pinnedQuality: -1,
+            levelRequest: null,
             recents,
             expanded: item.kind === "video",
           });
@@ -241,6 +261,7 @@ export const usePlayer = create<PlayerState>()(
         setVolume: (v) => set({ volume: Math.min(1, Math.max(0, v)), muted: v === 0 }),
         toggleMute: () => set((s) => ({ muted: !s.muted })),
         seek: (t) => set({ seekTo: t, progress: t }),
+        setQuality: (index) => set({ levelRequest: index, pinnedQuality: index }),
         setExpanded: (e) => set({ expanded: e }),
         stop: () =>
           set({ current: null, isPlaying: false, progress: 0, duration: 0, expanded: false }),
@@ -287,6 +308,9 @@ export const usePlayer = create<PlayerState>()(
         _setLoading: (l) => set({ loading: l }),
         _setError: (e) => set({ error: e, loading: false }),
         _clearSeek: () => set({ seekTo: null }),
+        _setQualities: (q) => set({ qualities: q }),
+        _setCurrentQuality: (i) => set({ currentQuality: i }),
+        _clearLevelRequest: () => set({ levelRequest: null }),
         _saveProgress: (id, time, duration) => {
           const p = { ...get().progressById };
           if (isFinite(duration) && duration > 0 && time > 5 && time < duration * 0.95) {

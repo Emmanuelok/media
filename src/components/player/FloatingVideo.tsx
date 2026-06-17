@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   Heart,
   PictureInPicture2,
+  Gauge,
 } from "lucide-react";
 
 /**
@@ -38,6 +39,19 @@ export default function FloatingVideo({
   const pct = s.duration > 0 && isFinite(s.duration) ? (s.progress / s.duration) * 100 : 0;
 
   const favorited = !!c && s.favorites.some((f) => f.id === c.id);
+
+  // HLS quality levels
+  const [showQuality, setShowQuality] = useState(false);
+  const levelsSorted = [...s.qualities].sort((a, b) => b.height - a.height || b.bitrate - a.bitrate);
+  const qLabel = (q: { height: number; bitrate: number }) =>
+    q.height ? `${q.height}p` : `${Math.round(q.bitrate / 1000)}k`;
+  const activeQ = s.currentQuality >= 0 ? s.qualities[s.currentQuality] : undefined;
+  const qBadge =
+    s.pinnedQuality === -1
+      ? activeQ?.height
+        ? `${activeQ.height}p`
+        : "Auto"
+      : qLabel(s.qualities[s.pinnedQuality] ?? { height: 0, bitrate: 0 });
 
   // Auto-skip dead live channels: when a TV stream errors and there are more in
   // the queue, advance to the next channel after a short, cancelable countdown.
@@ -223,6 +237,49 @@ export default function FloatingVideo({
             <button onClick={togglePip} className="hidden text-white sm:block" aria-label="Picture in picture">
               <PictureInPicture2 className="h-4 w-4" />
             </button>
+            {s.qualities.length > 1 && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowQuality((v) => !v)}
+                  className="flex items-center gap-1 text-white"
+                  aria-label="Quality"
+                >
+                  <Gauge className="h-4 w-4" />
+                  <span className="text-[10px] font-semibold tabular-nums">{qBadge}</span>
+                </button>
+                {showQuality && (
+                  <div className="absolute bottom-8 right-0 z-10 max-h-48 w-28 overflow-y-auto rounded-lg border border-white/15 bg-black/90 py-1 backdrop-blur">
+                    <button
+                      onClick={() => {
+                        s.setQuality(-1);
+                        setShowQuality(false);
+                      }}
+                      className={cn(
+                        "block w-full px-3 py-1.5 text-left text-xs",
+                        s.pinnedQuality === -1 ? "text-accent" : "text-white hover:bg-white/10",
+                      )}
+                    >
+                      Auto
+                    </button>
+                    {levelsSorted.map((q) => (
+                      <button
+                        key={q.index}
+                        onClick={() => {
+                          s.setQuality(q.index);
+                          setShowQuality(false);
+                        }}
+                        className={cn(
+                          "block w-full px-3 py-1.5 text-left text-xs",
+                          s.pinnedQuality === q.index ? "text-accent" : "text-white hover:bg-white/10",
+                        )}
+                      >
+                        {qLabel(q)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <button onClick={goFullscreen} className="text-white" aria-label="Fullscreen">
               <Maximize className="h-4 w-4" />
             </button>
