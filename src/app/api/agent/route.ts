@@ -161,11 +161,13 @@ export async function POST(req: Request) {
   let prompt = "";
   let history: { role: string; content: string }[] = [];
   let model = MODEL;
+  let profile = "";
   try {
     const body = await req.json();
     prompt = String(body.prompt ?? "").slice(0, 2000);
     if (Array.isArray(body.history)) history = body.history;
     if (typeof body.model === "string" && ALLOWED_MODELS.has(body.model)) model = body.model;
+    if (typeof body.profile === "string") profile = body.profile.slice(0, 600);
   } catch {
     /* ignore bad body */
   }
@@ -179,6 +181,9 @@ export async function POST(req: Request) {
   try {
     const client = new Anthropic({ apiKey });
     const known = new Map<string, MediaItem>();
+    const systemPrompt = profile
+      ? `${AGENT_SYSTEM}\n\nUSER TASTE PROFILE (personalize to this): ${profile}`
+      : AGENT_SYSTEM;
 
     const turns = history
       .filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
@@ -197,7 +202,7 @@ export async function POST(req: Request) {
       const resp = await client.messages.create({
         model,
         max_tokens: 1024,
-        system: AGENT_SYSTEM,
+        system: systemPrompt,
         tools,
         messages,
       });

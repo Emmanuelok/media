@@ -41,11 +41,13 @@ export async function POST(req: Request) {
   let prompt = "";
   let history: { role: string; content: string }[] = [];
   let model = MODEL;
+  let profile = "";
   try {
     const body = await req.json();
     prompt = String(body.prompt ?? "").slice(0, 2000);
     if (Array.isArray(body.history)) history = body.history;
     if (typeof body.model === "string" && ALLOWED_MODELS.has(body.model)) model = body.model;
+    if (typeof body.profile === "string") profile = body.profile.slice(0, 600);
   } catch {
     /* ignore bad body */
   }
@@ -76,7 +78,7 @@ export async function POST(req: Request) {
     const resp = await client.messages.create({
       model,
       max_tokens: 1024,
-      system: SYSTEM,
+      system: profile ? `${SYSTEM}\n\nUSER TASTE PROFILE (personalize to this): ${profile}` : SYSTEM,
       messages,
     });
 

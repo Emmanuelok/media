@@ -26,8 +26,10 @@ export const ACCENTS = [
 interface SettingsState {
   aiModel: AiModelId;
   accent: string;
+  aiNote: string;
   setAiModel: (m: AiModelId) => void;
   setAccent: (a: string) => void;
+  setAiNote: (n: string) => void;
 }
 
 export const useSettings = create<SettingsState>()(
@@ -35,8 +37,10 @@ export const useSettings = create<SettingsState>()(
     (set) => ({
       aiModel: "claude-opus-4-8",
       accent: "#a855f7",
+      aiNote: "",
       setAiModel: (m) => set({ aiModel: m }),
       setAccent: (a) => set({ accent: a }),
+      setAiNote: (n) => set({ aiNote: n.slice(0, 400) }),
     }),
     { name: "aurora-settings", storage: createJSONStorage(() => localStorage) },
   ),

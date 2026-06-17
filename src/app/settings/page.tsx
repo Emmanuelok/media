@@ -38,6 +38,8 @@ export default function SettingsPage() {
   const setAiModel = useSettings((s) => s.setAiModel);
   const accent = useSettings((s) => s.accent);
   const setAccent = useSettings((s) => s.setAccent);
+  const aiNote = useSettings((s) => s.aiNote);
+  const setAiNote = useSettings((s) => s.setAiNote);
 
   const autoplay = usePlayer((s) => s.autoplay);
   const setAutoplay = usePlayer((s) => s.setAutoplay);
@@ -88,6 +90,23 @@ export default function SettingsPage() {
                 </button>
               );
             })}
+          </div>
+          <div className="mt-4">
+            <label htmlFor="ainote" className="text-sm font-medium text-white">
+              About your taste (optional)
+            </label>
+            <p className="text-xs text-muted">
+              Aurora blends this with what you like &amp; play to personalize recommendations.
+            </p>
+            <textarea
+              id="ainote"
+              value={aiNote}
+              onChange={(e) => setAiNote(e.target.value)}
+              rows={2}
+              maxLength={400}
+              placeholder="e.g. I love ambient & jazz, sci-fi films, and I follow Argentine football."
+              className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-muted focus:border-accent/60 focus:outline-none"
+            />
           </div>
         </Section>
 

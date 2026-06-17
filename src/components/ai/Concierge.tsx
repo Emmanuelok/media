@@ -20,6 +20,7 @@ import {
 import { useUI } from "@/lib/ui";
 import { useSettings } from "@/lib/settings";
 import { usePlayer } from "@/lib/store";
+import { buildTasteProfile } from "@/lib/taste";
 import { LOCAL_INDEX } from "@/lib/catalog";
 import { MediaCard } from "@/components/media/Media";
 import { cn } from "@/lib/utils";
@@ -59,9 +60,12 @@ export default function Concierge() {
   const conciergeRunId = useUI((s) => s.conciergeRunId);
   const close = useUI((s) => s.closeConcierge);
   const aiModel = useSettings((s) => s.aiModel);
+  const aiNote = useSettings((s) => s.aiNote);
   const play = usePlayer((s) => s.play);
   const setSleepTimer = usePlayer((s) => s.setSleepTimer);
   const toggleFavorite = usePlayer((s) => s.toggleFavorite);
+  const favorites = usePlayer((s) => s.favorites);
+  const recents = usePlayer((s) => s.recents);
   const router = useRouter();
 
   const [mode, setMode] = useState<Mode>("auto");
@@ -98,6 +102,7 @@ export default function Concierge() {
     const prompt = text.trim();
     if (!prompt || busy) return;
     const history = messages.map((m) => ({ role: m.role, content: m.content }));
+    const profile = buildTasteProfile(favorites, recents, aiNote);
     setMessages((m) => [...m, { role: "user", content: prompt }]);
     setInput("");
     setBusy(true);
@@ -106,7 +111,7 @@ export default function Concierge() {
         const res = await fetch("/api/agent", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, history, model: aiModel }),
+          body: JSON.stringify({ prompt, history, model: aiModel, profile }),
         });
         const data = await res.json();
         const items: MediaItem[] = Array.isArray(data.items) ? data.items : [];
@@ -143,7 +148,7 @@ export default function Concierge() {
         const res = await fetch("/api/ai", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, history, model: aiModel }),
+          body: JSON.stringify({ prompt, history, model: aiModel, profile }),
         });
         const data = await res.json();
         const picks: MediaItem[] = (data.picks ?? [])
