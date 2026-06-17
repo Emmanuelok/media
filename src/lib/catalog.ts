@@ -164,6 +164,48 @@ export const VIDEOS: MediaItem[] = [
     "1.1M views",
     170,
   ),
+  v(
+    "joyrides",
+    "For Bigger Joyrides",
+    "Aurora Shorts",
+    `${GB}/ForBiggerJoyrides.mp4`,
+    `${GB}/images/ForBiggerJoyrides.jpg`,
+    "Shorts",
+    "HD",
+    "1.4M views",
+    15,
+  ),
+  v(
+    "grand",
+    "What Car For A Grand?",
+    "Wheels Channel",
+    `${GB}/WhatCarCanYouGetForAGrand.mp4`,
+    `${GB}/images/WhatCarCanYouGetForAGrand.jpg`,
+    "Autos",
+    "HD",
+    "820K views",
+    207,
+  ),
+  v(
+    "muxdemo",
+    "Adaptive HLS Demo",
+    "Aurora Labs",
+    "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+    `${GB}/images/ForBiggerFun.jpg`,
+    "Tech",
+    "HD",
+    "2.1M views",
+  ),
+  v(
+    "apple4k2",
+    "4K HDR Showcase",
+    "Aurora Originals",
+    "https://devstreaming-cdn.apple.com/videos/streaming/examples/adv_dv_atmos/main.m3u8",
+    `${GB}/images/ForBiggerMeltdowns.jpg`,
+    "Originals",
+    "4K",
+    "4.0M views",
+  ),
 ];
 
 // ---- Music ----
@@ -187,7 +229,7 @@ const ALBUMS = [
   "Slow Motion",
 ];
 
-export const TRACKS: MediaItem[] = Array.from({ length: 14 }, (_, i) => {
+export const TRACKS: MediaItem[] = Array.from({ length: 16 }, (_, i) => {
   const n = i + 1;
   const artist = ARTISTS[i % ARTISTS.length];
   const album = ALBUMS[i % ALBUMS.length];
@@ -242,6 +284,20 @@ export const PLAYLISTS: Playlist[] = [
     subtitle: "Easy & warm",
     emoji: "☕",
     trackIds: TRACKS.slice(0, 8).map((t) => t.id),
+  },
+  {
+    id: "discovery",
+    title: "Discovery",
+    subtitle: "Fresh finds",
+    emoji: "🧭",
+    trackIds: TRACKS.slice(8, 16).map((t) => t.id),
+  },
+  {
+    id: "allnight",
+    title: "All Night",
+    subtitle: "Keep it going",
+    emoji: "🌌",
+    trackIds: TRACKS.slice(2, 14).map((t) => t.id),
   },
 ];
 
