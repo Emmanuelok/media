@@ -16,11 +16,13 @@ import {
   Heart,
   Compass,
   ExternalLink,
+  Mic,
 } from "lucide-react";
 import { useUI } from "@/lib/ui";
 import { useSettings } from "@/lib/settings";
 import { usePlayer } from "@/lib/store";
 import { buildTasteProfile } from "@/lib/taste";
+import { useSpeechToText } from "@/lib/useSpeech";
 import { LOCAL_INDEX } from "@/lib/catalog";
 import { MediaCard } from "@/components/media/Media";
 import { cn } from "@/lib/utils";
@@ -74,6 +76,10 @@ export default function Concierge() {
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const ranRef = useRef<number | null>(null);
+  const voice = useSpeechToText((text) => {
+    setInput(text);
+    send(text);
+  });
 
   useEffect(() => {
     if (open && seed) setInput(seed);
@@ -388,9 +394,28 @@ export default function Concierge() {
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={mode === "auto" ? "Tell Aurora what to set up…" : "Ask Aurora anything…"}
+              placeholder={
+                voice.listening
+                  ? "Listening…"
+                  : mode === "auto"
+                    ? "Tell Aurora what to set up…"
+                    : "Ask Aurora anything…"
+              }
               className="flex-1 bg-transparent px-2 text-sm text-white placeholder:text-muted focus:outline-none"
             />
+            {voice.supported && (
+              <button
+                type="button"
+                onClick={() => (voice.listening ? voice.stop() : voice.start())}
+                aria-label={voice.listening ? "Stop listening" : "Speak to Aurora"}
+                className={cn(
+                  "grid h-8 w-8 shrink-0 place-items-center rounded-full transition",
+                  voice.listening ? "animate-pulse bg-red-500 text-white" : "text-muted hover:text-white",
+                )}
+              >
+                <Mic className="h-4 w-4" />
+              </button>
+            )}
             <button
               type="submit"
               disabled={busy || !input.trim()}
