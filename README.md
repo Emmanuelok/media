@@ -79,6 +79,34 @@ Note: a pure static export isn't possible as-is because of the `/api/ai` route.
 
 ---
 
+## ⚙️ Optional backend — cross-device sync & background reminders
+
+These light up extra features when their env vars are set; everything degrades gracefully when they aren't.
+
+**Durable storage (Upstash / Vercel KV)** — enables durable cross-device **Sync** (Settings → Sync) and persistent push registrations:
+
+```bash
+KV_REST_API_URL=...        # or UPSTASH_REDIS_REST_URL
+KV_REST_API_TOKEN=...      # or UPSTASH_REDIS_REST_TOKEN
+```
+
+Without it, Sync still works in-memory within a single dev server.
+
+**Background push reminders** — scheduled routines fire even when Aurora is closed:
+
+```bash
+npx web-push generate-vapid-keys     # -> public + private key
+# then set:
+VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+VAPID_SUBJECT=mailto:you@example.com
+CRON_SECRET=some-long-random-string
+```
+
+The included `vercel.json` runs `/api/cron/run` every minute; on Vercel, setting `CRON_SECRET` makes it send that secret as a Bearer token automatically (per-minute crons need a paid plan — or trigger the endpoint from a GitHub Action/external cron with `?secret=` or an `Authorization: Bearer` header). When `VAPID_*` is unset, the push UI hides itself and **desktop reminders still work while Aurora is open**.
+
+---
+
 ## 🧱 Architecture
 
 ```

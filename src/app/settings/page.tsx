@@ -15,6 +15,7 @@ import { useSettings, AI_MODELS, ACCENTS } from "@/lib/settings";
 import { usePlayer } from "@/lib/store";
 import { buildSnapshot, applySnapshot } from "@/lib/sync";
 import { PageHeader } from "@/components/ui/PageHeader";
+import PushSettings from "@/components/push/PushSettings";
 import { cn } from "@/lib/utils";
 
 const SHORTCUTS: [string, string][] = [
@@ -303,6 +304,11 @@ export default function SettingsPage() {
                 )}
               />
             </button>
+          </div>
+
+          <div className="mt-4 border-t border-white/10 pt-4">
+            <p className="mb-1.5 text-sm font-medium text-white">Background reminders (push)</p>
+            <PushSettings />
           </div>
         </Section>
 

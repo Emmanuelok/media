@@ -35,6 +35,20 @@ export function isScheduleDue(s: Schedule, now: Date): boolean {
   return s.time === hhmm && s.lastFired !== todayKey(now);
 }
 
+/** UTC date key — used server-side where `wall` is a device-local wall-clock date. */
+export function utcDateKey(wall: Date): string {
+  return `${wall.getUTCFullYear()}-${String(wall.getUTCMonth() + 1).padStart(2, "0")}-${String(
+    wall.getUTCDate(),
+  ).padStart(2, "0")}`;
+}
+
+/** Server-side due check. `wall` is a Date whose UTC fields equal the device's local wall clock. */
+export function isScheduleDueUTC(s: Schedule, wall: Date): boolean {
+  if (!s.enabled) return false;
+  const hhmm = `${String(wall.getUTCHours()).padStart(2, "0")}:${String(wall.getUTCMinutes()).padStart(2, "0")}`;
+  return s.time === hhmm && s.lastFired !== utcDateKey(wall);
+}
+
 export const DEFAULT_ROUTINES: Routine[] = [
   {
     id: "focus",

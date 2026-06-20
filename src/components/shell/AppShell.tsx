@@ -10,17 +10,30 @@ import ServiceWorkerRegistrar from "@/components/pwa/ServiceWorkerRegistrar";
 import RoutineScheduler from "@/components/routines/RoutineScheduler";
 import { usePlayer } from "@/lib/store";
 import { useSettings } from "@/lib/settings";
+import { useUI } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const current = usePlayer((s) => s.current);
   const accent = useSettings((s) => s.accent);
+  const openConcierge = useUI((s) => s.openConcierge);
   const audioActive = current && current.kind !== "video" && current.kind !== "tv";
 
   // Apply the chosen accent color app-wide.
   useEffect(() => {
     document.documentElement.style.setProperty("--color-accent", accent);
   }, [accent]);
+
+  // Auto-run a routine when opened from a push notification (/?routine=...).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const r = params.get("routine");
+    if (!r) return;
+    openConcierge(r, true);
+    params.delete("routine");
+    const qs = params.toString();
+    window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
+  }, [openConcierge]);
 
   return (
     <div className="flex min-h-screen w-full">

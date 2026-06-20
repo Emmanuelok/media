@@ -28,20 +28,25 @@ self.addEventListener("message", (event) => {
   if (event.data === "SKIP_WAITING") self.skipWaiting();
 });
 
-// Focus (or open) Aurora when a notification is clicked.
+// Focus (or open) Aurora when a notification is clicked — navigating to the
+// notification's url (e.g. /?routine=... auto-runs the routine).
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/";
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
       for (const c of clients) {
-        if ("focus" in c) return c.focus();
+        if ("focus" in c) {
+          if (c.navigate) c.navigate(url);
+          return c.focus();
+        }
       }
-      return self.clients.openWindow ? self.clients.openWindow("/") : undefined;
+      return self.clients.openWindow ? self.clients.openWindow(url) : undefined;
     }),
   );
 });
 
-// Foundation for server-side web push (requires VAPID + a backend to send).
+// Server-side web push (VAPID + backend cron). Payload: {title, body, tag, url}.
 self.addEventListener("push", (event) => {
   let data = {};
   try {
@@ -54,6 +59,7 @@ self.addEventListener("push", (event) => {
       body: data.body || "",
       icon: "/icon.svg",
       tag: data.tag || "aurora",
+      data: { url: data.url || "/" },
     }),
   );
 });

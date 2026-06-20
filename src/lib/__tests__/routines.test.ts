@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { DEFAULT_ROUTINES, isScheduleDue, todayKey, type Schedule } from "@/lib/routines";
+import {
+  DEFAULT_ROUTINES,
+  isScheduleDue,
+  isScheduleDueUTC,
+  todayKey,
+  utcDateKey,
+  type Schedule,
+} from "@/lib/routines";
 
 describe("DEFAULT_ROUTINES", () => {
   it("each routine has a unique id and a non-empty title + prompt", () => {
@@ -27,5 +34,16 @@ describe("isScheduleDue", () => {
   it("does not refire once already fired today", () => {
     const now = at(8, 0);
     expect(isScheduleDue({ ...base, lastFired: todayKey(now) }, now)).toBe(false);
+  });
+});
+
+describe("isScheduleDueUTC (server-side)", () => {
+  const wall = new Date(Date.UTC(2026, 0, 1, 8, 0, 0));
+  const base: Schedule = { id: "s1", label: "x", prompt: "p", time: "08:00", enabled: true, lastFired: null };
+
+  it("fires when UTC wall-clock matches and not fired today", () => {
+    expect(isScheduleDueUTC(base, wall)).toBe(true);
+    expect(isScheduleDueUTC({ ...base, time: "08:01" }, wall)).toBe(false);
+    expect(isScheduleDueUTC({ ...base, lastFired: utcDateKey(wall) }, wall)).toBe(false);
   });
 });
