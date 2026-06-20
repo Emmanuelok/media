@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MediaGrid } from "@/components/media/Media";
+import { ChannelGrid } from "@/components/live/ChannelGrid";
 import { SkeletonGrid, ErrorState, EmptyState } from "@/components/ui/States";
 import type { MediaItem } from "@/lib/types";
 
@@ -14,11 +15,13 @@ export function Browse({
   deps,
   square = false,
   empty,
+  channelMode = false,
 }: {
   loader: () => Promise<MediaItem[]>;
   deps: React.DependencyList;
   square?: boolean;
   empty?: string;
+  channelMode?: boolean;
 }) {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,5 +44,5 @@ export function Browse({
   if (loading) return <SkeletonGrid square={square} />;
   if (error) return <ErrorState message={error} />;
   if (!items.length) return <EmptyState message={empty} />;
-  return <MediaGrid items={items} />;
+  return channelMode ? <ChannelGrid items={items} /> : <MediaGrid items={items} />;
 }

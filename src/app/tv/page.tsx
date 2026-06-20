@@ -10,8 +10,8 @@ import {
   tvByCategory,
   tvByCountry,
 } from "@/lib/tv";
-import { MediaGrid } from "@/components/media/Media";
 import { Browse } from "@/components/live/Browse";
+import { ChannelGrid } from "@/components/live/ChannelGrid";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Chips } from "@/components/ui/Chips";
 
@@ -57,15 +57,17 @@ function TvInner() {
       </div>
 
       {sel === "featured" ? (
-        <MediaGrid items={FEATURED_TV} />
+        <ChannelGrid items={FEATURED_TV} />
       ) : sel.startsWith("cat:") ? (
         <Browse
+          channelMode
           deps={[sel]}
           loader={() => tvByCategory(sel.slice(4))}
           empty="No channels found in this category."
         />
       ) : (
         <Browse
+          channelMode
           deps={[sel]}
           loader={() => tvByCountry(sel.slice(8))}
           empty="No channels found for this country."

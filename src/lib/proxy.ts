@@ -1,4 +1,5 @@
 import net from "node:net";
+import dns from "node:dns/promises";
 
 // Pure, server-side helpers for the /api/stream proxy. Kept separate so the
 // security-critical logic (SSRF checks, HLS rewriting) can be unit-tested.
@@ -30,6 +31,25 @@ export function hostAllowed(host: string, allowed: string[]): boolean {
   if (!allowed.length) return true;
   const h = host.toLowerCase();
   return allowed.some((a) => h === a || h.endsWith("." + a));
+}
+
+/**
+ * Resolve a hostname and reject if it is local/private/blocked or off-allowlist.
+ * Shared by /api/stream and /api/check so SSRF protection stays in one place.
+ */
+export async function assertReachable(hostname: string, allowedHosts: string[]): Promise<void> {
+  const host = hostname.toLowerCase();
+  if (host === "localhost" || host.endsWith(".local") || host.endsWith(".internal")) {
+    throw new Error("blocked host");
+  }
+  if (!hostAllowed(host, allowedHosts)) throw new Error("host not allowed");
+  if (net.isIP(host)) {
+    if (ipBlocked(host)) throw new Error("blocked host");
+    return;
+  }
+  const addrs = await dns.lookup(host, { all: true });
+  if (!addrs.length) throw new Error("unresolved host");
+  for (const a of addrs) if (ipBlocked(a.address)) throw new Error("blocked host");
 }
 
 const proxy = (u: string) => `/api/stream?url=${encodeURIComponent(u)}`;

@@ -1,6 +1,4 @@
-import dns from "node:dns/promises";
-import net from "node:net";
-import { ipBlocked, hostAllowed, rewriteHlsPlaylist, isCacheablePlaylist } from "@/lib/proxy";
+import { assertReachable, rewriteHlsPlaylist, isCacheablePlaylist } from "@/lib/proxy";
 
 // Server-side stream proxy. Makes more public live streams playable in-browser by
 // adding CORS, upgrading HTTP→HTTPS, and rewriting HLS playlists. Hardened with
@@ -66,25 +64,10 @@ function cacheSet(key: string, body: string) {
   playlistCache.set(key, { body, exp: Date.now() + PLAYLIST_TTL });
 }
 
-async function assertReachable(hostname: string): Promise<void> {
-  const host = hostname.toLowerCase();
-  if (host === "localhost" || host.endsWith(".local") || host.endsWith(".internal")) {
-    throw new Error("blocked host");
-  }
-  if (!hostAllowed(host, ALLOWED_HOSTS)) throw new Error("host not allowed");
-  if (net.isIP(host)) {
-    if (ipBlocked(host)) throw new Error("blocked host");
-    return;
-  }
-  const addrs = await dns.lookup(host, { all: true });
-  if (!addrs.length) throw new Error("unresolved host");
-  for (const a of addrs) if (ipBlocked(a.address)) throw new Error("blocked host");
-}
-
 async function fetchUpstream(initial: string, range: string | null) {
   let url = initial;
   for (let hop = 0; hop < 5; hop++) {
-    await assertReachable(new URL(url).hostname);
+    await assertReachable(new URL(url).hostname, ALLOWED_HOSTS);
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 20000);
     let res: Response;
