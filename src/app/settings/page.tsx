@@ -1,8 +1,19 @@
 "use client";
 
-import { Settings as SettingsIcon, Check, Trash2, Sparkles, Keyboard } from "lucide-react";
+import { useState } from "react";
+import {
+  Settings as SettingsIcon,
+  Check,
+  Trash2,
+  Sparkles,
+  Keyboard,
+  RefreshCw,
+  UploadCloud,
+  DownloadCloud,
+} from "lucide-react";
 import { useSettings, AI_MODELS, ACCENTS } from "@/lib/settings";
 import { usePlayer } from "@/lib/store";
+import { buildSnapshot, applySnapshot } from "@/lib/sync";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils";
 
@@ -64,6 +75,61 @@ export default function SettingsPage() {
         ? await Notification.requestPermission()
         : Notification.permission;
     setNotifyRoutines(perm === "granted");
+  };
+
+  const syncCode = useSettings((s) => s.syncCode);
+  const setSyncCode = useSettings((s) => s.setSyncCode);
+  const [syncBusy, setSyncBusy] = useState(false);
+  const [syncMsg, setSyncMsg] = useState("");
+
+  const pushSync = async () => {
+    const code = syncCode.trim();
+    if (!code) return setSyncMsg("Enter or generate a code first.");
+    setSyncBusy(true);
+    setSyncMsg("");
+    try {
+      const res = await fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, data: buildSnapshot() }),
+      });
+      const d = await res.json();
+      setSyncMsg(
+        res.ok
+          ? d.durable
+            ? "✓ Saved to the cloud."
+            : "✓ Saved (dev / in-memory — set KV env for durable cross-device sync)."
+          : d.error || "Failed to save.",
+      );
+    } catch {
+      setSyncMsg("Network error.");
+    } finally {
+      setSyncBusy(false);
+    }
+  };
+
+  const pullSync = async () => {
+    const code = syncCode.trim();
+    if (!code) return setSyncMsg("Enter your code first.");
+    if (!confirm("Replace this device's library, settings & routines with the synced copy?")) return;
+    setSyncBusy(true);
+    setSyncMsg("");
+    try {
+      const res = await fetch(`/api/sync?code=${encodeURIComponent(code)}`);
+      const d = await res.json();
+      if (res.ok && d.found) {
+        applySnapshot(d.data);
+        setSyncMsg("✓ Pulled and applied.");
+      } else if (res.ok) {
+        setSyncMsg("No data found for that code.");
+      } else {
+        setSyncMsg(d.error || "Failed to pull.");
+      }
+    } catch {
+      setSyncMsg("Network error.");
+    } finally {
+      setSyncBusy(false);
+    }
   };
 
   return (
@@ -310,6 +376,41 @@ export default function SettingsPage() {
               <Trash2 className="h-3.5 w-3.5" /> Clear history ({recCount})
             </button>
           </div>
+        </Section>
+
+        <Section
+          title="Sync across devices"
+          desc="Push this device's library, settings & routines to a private code, then pull it on another device."
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              value={syncCode}
+              onChange={(e) => setSyncCode(e.target.value)}
+              placeholder="your-private-code"
+              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-muted focus:border-accent/60 focus:outline-none"
+            />
+            <button
+              onClick={() => setSyncCode(Math.random().toString(36).slice(2, 10))}
+              className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-2 text-sm text-white transition hover:bg-white/10"
+            >
+              <RefreshCw className="h-3.5 w-3.5" /> Generate
+            </button>
+            <button
+              onClick={pushSync}
+              disabled={syncBusy}
+              className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+            >
+              <UploadCloud className="h-4 w-4" /> Push
+            </button>
+            <button
+              onClick={pullSync}
+              disabled={syncBusy}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/10 disabled:opacity-50"
+            >
+              <DownloadCloud className="h-4 w-4" /> Pull
+            </button>
+          </div>
+          {syncMsg && <p className="mt-2 text-xs text-muted">{syncMsg}</p>}
         </Section>
 
         <Section title="Keyboard shortcuts">
