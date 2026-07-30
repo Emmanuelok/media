@@ -78,8 +78,8 @@ export function MediaCard({
         <button
           onClick={() => toggleFavorite(item)}
           className={cn(
-            "absolute bottom-2 left-2 z-30 grid h-8 w-8 place-items-center rounded-full bg-black/55 backdrop-blur transition focus-visible:opacity-100",
-            favorited ? "text-accent opacity-100" : "text-white opacity-0 group-hover:opacity-100",
+            "absolute bottom-2 left-2 z-30 grid h-11 w-11 place-items-center rounded-full bg-black/55 backdrop-blur transition focus-visible:opacity-100",
+            favorited ? "text-accent opacity-100" : "text-white/90 opacity-100",
           )}
           aria-label={favorited ? "Remove from favorites" : "Save to favorites"}
         >
