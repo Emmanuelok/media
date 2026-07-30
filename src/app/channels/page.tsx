@@ -147,11 +147,12 @@ export default function ChannelsPage() {
       <div className="mb-5 flex items-start gap-2 rounded-xl border border-white/10 bg-surface/40 p-3 text-xs text-muted">
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-cyan-400" />
         <p>
-          <span className="font-semibold text-emerald-400">Free-to-air</span> broadcasters open in
-          Aurora&apos;s Live TV (public streams).{" "}
-          <span className="font-semibold text-amber-400">Subscription / region</span> services
-          (FOX, Peacock, DSPORTS, DGO, ViX, ITVX, TUDN…) are licensed and geo-locked — those open in
-          the broadcaster&apos;s official app, where a subscription or your region may be required.
+          <span className="font-semibold text-emerald-400">Free-to-air</span>{" "}
+          broadcasters open in Aurora&apos;s Live TV (public streams).{" "}
+          <span className="font-semibold text-amber-400">Subscription / region</span>{" "}
+          services (FOX, Peacock, DSPORTS, DGO, ViX, ITVX, TUDN…) are licensed and geo-locked —
+          those open in the broadcaster&apos;s official app, where a subscription or your region may
+          be required.
         </p>
       </div>
 
