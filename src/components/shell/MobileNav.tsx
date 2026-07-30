@@ -51,7 +51,7 @@ export default function MobileNav() {
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="grid h-8 w-8 place-items-center rounded-full bg-white/8 text-white"
+                className="grid h-11 w-11 place-items-center rounded-full bg-white/8 text-white"
                 aria-label="Close menu"
               >
                 <X className="h-4 w-4" />
