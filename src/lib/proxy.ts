@@ -33,6 +33,35 @@ export function hostAllowed(host: string, allowed: string[]): boolean {
   return allowed.some((a) => h === a || h.endsWith("." + a));
 }
 
+const DNS_CACHE_TTL_MS = 5 * 60 * 1000;
+const DNS_CACHE_LIMIT = 200;
+const dnsCache = new Map<
+  string,
+  {
+    expiresAt: number;
+    lookup: Promise<Array<{ address: string; family: number }>>;
+  }
+>();
+
+function cachedLookup(host: string) {
+  const now = Date.now();
+  const cached = dnsCache.get(host);
+  if (cached && cached.expiresAt > now) return cached.lookup;
+  if (cached) dnsCache.delete(host);
+
+  if (dnsCache.size >= DNS_CACHE_LIMIT) {
+    for (const [key, entry] of dnsCache) {
+      if (entry.expiresAt <= now || dnsCache.size >= DNS_CACHE_LIMIT) dnsCache.delete(key);
+      if (dnsCache.size < DNS_CACHE_LIMIT) break;
+    }
+  }
+
+  const lookup = dns.lookup(host, { all: true });
+  dnsCache.set(host, { expiresAt: now + DNS_CACHE_TTL_MS, lookup });
+  void lookup.catch(() => dnsCache.delete(host));
+  return lookup;
+}
+
 /**
  * Resolve a hostname and reject if it is local/private/blocked or off-allowlist.
  * Shared by /api/stream and /api/check so SSRF protection stays in one place.
@@ -47,7 +76,7 @@ export async function assertReachable(hostname: string, allowedHosts: string[]):
     if (ipBlocked(host)) throw new Error("blocked host");
     return;
   }
-  const addrs = await dns.lookup(host, { all: true });
+  const addrs = await cachedLookup(host);
   if (!addrs.length) throw new Error("unresolved host");
   for (const a of addrs) if (ipBlocked(a.address)) throw new Error("blocked host");
 }

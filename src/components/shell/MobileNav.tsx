@@ -3,14 +3,20 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Globe, Menu, Settings, Wand2, X } from "lucide-react";
-import { NAV } from "./nav";
+import { Clapperboard, Globe, Home, Library, Menu, Music2, Radio, Search, Settings, Tv, Wand2, X } from "lucide-react";
 import { usePlayer } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
-const PRIMARY_NAV = NAV.slice(0, 5);
+const PRIMARY_NAV = [
+  { href: "/", label: "Home", icon: Home },
+  { href: "/tv", label: "Live", icon: Tv },
+  { href: "/search", label: "Search", icon: Search },
+  { href: "/library", label: "Library", icon: Library },
+] as const;
 const MORE_NAV = [
-  ...NAV.slice(5),
+  { href: "/video", label: "Video", icon: Clapperboard },
+  { href: "/music", label: "Music", icon: Music2 },
+  { href: "/radio", label: "Radio", icon: Radio },
   { href: "/channels", label: "Networks", icon: Globe },
   { href: "/routines", label: "Routines", icon: Wand2 },
   { href: "/settings", label: "Settings", icon: Settings },

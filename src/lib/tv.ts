@@ -62,6 +62,37 @@ function qualityBadge(name: string): string | undefined {
 const attr = (line: string, key: string): string | undefined =>
   new RegExp(`${key}="([^"]*)"`).exec(line)?.[1] || undefined;
 
+function stableHash(value: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function idPart(value: string): string {
+  return (
+    value
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 52) || "channel"
+  );
+}
+
+/** A channel can expose multiple feeds, so the URL fingerprint is part of the id. */
+function streamCandidateId(sourceId: string | undefined, title: string, src: string): string {
+  return `tv:${idPart(sourceId || title)}:${stableHash(src)}`;
+}
+
+function splitList(value?: string): string[] {
+  if (!value) return [];
+  return [...new Set(value.split(/[;,]/).map((part) => part.trim()).filter(Boolean))];
+}
+
 /** Parse an iptv-org M3U playlist into MediaItems. */
 export function parseM3U(text: string, category?: string): MediaItem[] {
   const lines = text.split(/\r?\n/);
@@ -87,9 +118,11 @@ export function parseM3U(text: string, category?: string): MediaItem[] {
     const logo = attr(line, "tvg-logo");
     const group = attr(line, "group-title");
     const tvgId = attr(line, "tvg-id");
+    const languages = splitList(attr(line, "tvg-language"));
+    const countryCode = attr(line, "tvg-country")?.split(/[;,]/)[0]?.trim().toLowerCase();
     const badge = qualityBadge(name) ?? "LIVE";
     items.push({
-      id: `tv:${tvgId || url}`,
+      id: streamCandidateId(tvgId, name, url),
       kind: "tv",
       title: name.replace(/\s*\((\d+p|4k|uhd|hd)\)\s*/gi, " ").trim() || name,
       subtitle: group || category,
@@ -98,7 +131,13 @@ export function parseM3U(text: string, category?: string): MediaItem[] {
       streamType: "hls",
       isLive: true,
       category: category || group?.toLowerCase(),
+      countryCode,
+      language: languages[0],
+      languages: languages.length ? languages : undefined,
       badge,
+      health: "unknown",
+      sourceLabel: "iptv-org public catalogue",
+      sourceKind: "public-directory",
     });
   }
   return items;
@@ -126,222 +165,164 @@ export function tvByCountry(code: string, limit = 80): Promise<MediaItem[]> {
   return fetchM3U(`${BASE}/countries/${code}.m3u`).then((items) => items.slice(0, limit));
 }
 
-// Hand-picked, broadly-reliable global channels for an instant, populated home view.
-// Public broadcasters and 24/7 streams that generally allow direct in-browser playback.
-export const FEATURED_TV: MediaItem[] = [
-  {
-    id: "tv:nasa",
+type FeaturedTvItem = Omit<
+  MediaItem,
+  "kind" | "streamType" | "isLive" | "sourceLabel" | "sourceKind" | "health"
+> & {
+  officialUrl: string;
+  language: string;
+};
+
+function featuredTv(item: FeaturedTvItem): MediaItem {
+  return {
+    ...item,
     kind: "tv",
-    title: "NASA TV Public",
+    streamType: "hls",
+    isLive: true,
+    language: item.language,
+    languages: item.languages ?? [item.language],
+    health: "likely",
+    healthReason: "Curated public broadcaster feed; live availability can vary by region.",
+    sourceLabel: "Official broadcaster feed",
+    sourceKind: "official",
+  };
+}
+
+// Hand-picked public broadcaster feeds for an instant, geographically varied home view.
+// Each entry includes an official-page fallback because even legitimate HLS endpoints can
+// rotate, reject a region, or temporarily block browser playback.
+export const FEATURED_TV: MediaItem[] = [
+  featuredTv({
+    id: "tv:nasa",
+    title: "NASA+ Live",
     subtitle: "Science • United States",
     thumbnail: "https://upload.wikimedia.org/wikipedia/commons/e/e5/NASA_logo.svg",
     src: "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8",
-    streamType: "hls",
-    isLive: true,
     category: "science",
     country: "United States",
     countryCode: "us",
     badge: "HD",
-  },
-  {
-    id: "tv:redbull",
-    kind: "tv",
-    title: "Red Bull TV",
-    subtitle: "Sports & Adventure • Global",
-    thumbnail: "https://i.imgur.com/zNQX0sd.png",
-    src: "https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8",
-    streamType: "hls",
-    isLive: true,
-    category: "sports",
-    country: "Global",
-    badge: "HD",
-  },
-  {
+    language: "English",
+    officialUrl: "https://www.nasa.gov/live/",
+  }),
+  featuredTv({
     id: "tv:dw",
-    kind: "tv",
     title: "DW English",
-    subtitle: "News • Germany",
+    subtitle: "World news • Germany",
     src: "https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8",
-    streamType: "hls",
-    isLive: true,
     category: "news",
     country: "Germany",
     countryCode: "de",
     badge: "HD",
-  },
-  {
-    id: "tv:aljazeera",
-    kind: "tv",
-    title: "Al Jazeera English",
-    subtitle: "News • Qatar",
-    src: "https://live-hls-web-aje.getaj.net/AJE/01.m3u8",
-    streamType: "hls",
-    isLive: true,
+    language: "English",
+    officialUrl: "https://www.dw.com/en/live-tv/channel-english",
+  }),
+  featuredTv({
+    id: "tv:dwes",
+    title: "DW Español",
+    subtitle: "World news • Germany",
+    src: "https://dwamdstream104.akamaized.net/hls/live/2015530/dwstream104/index.m3u8",
+    category: "news",
+    country: "Germany",
+    countryCode: "de",
+    badge: "HD",
+    language: "Spanish",
+    officialUrl: "https://www.dw.com/es/multimedia/s-100814",
+  }),
+  featuredTv({
+    id: "tv:ajarabic",
+    title: "Al Jazeera Arabic",
+    subtitle: "World news • Qatar",
+    src: "https://live-hls-web-aja.getaj.net/AJA/index.m3u8",
     category: "news",
     country: "Qatar",
+    countryCode: "qa",
     badge: "HD",
-  },
-  {
+    language: "Arabic",
+    officialUrl: "https://www.aljazeera.net/live/",
+  }),
+  featuredTv({
     id: "tv:france24",
-    kind: "tv",
     title: "France 24 English",
-    subtitle: "News • France",
+    subtitle: "World news • France",
     src: "https://static.france24.com/live/F24_EN_LO_HLS/live_web.m3u8",
-    streamType: "hls",
-    isLive: true,
     category: "news",
     country: "France",
     countryCode: "fr",
     badge: "HD",
-  },
-  {
-    id: "tv:bloomberg",
-    kind: "tv",
-    title: "Bloomberg TV",
-    subtitle: "Business News • United States",
-    src: "https://bloomberg-bloomberg-1-gb.samsung.wurl.tv/playlist.m3u8",
-    streamType: "hls",
-    isLive: true,
+    language: "English",
+    officialUrl: "https://www.france24.com/en/live",
+  }),
+  featuredTv({
+    id: "tv:france24es",
+    title: "France 24 Español",
+    subtitle: "World news • France",
+    src: "https://static.france24.com/live/F24_ES_LO_HLS/live_web.m3u8",
     category: "news",
-    country: "United States",
-    countryCode: "us",
+    country: "France",
+    countryCode: "fr",
     badge: "HD",
-  },
-  {
-    id: "tv:abcnews",
-    kind: "tv",
-    title: "ABC News Live",
-    subtitle: "News • United States",
-    src: "https://content.uplynk.com/channel/3324f2467c414329b3b0cc5cd987b6be.m3u8",
-    streamType: "hls",
-    isLive: true,
-    category: "news",
-    country: "United States",
-    countryCode: "us",
-    badge: "HD",
-  },
-  {
+    language: "Spanish",
+    officialUrl: "https://www.france24.com/es/en-vivo",
+  }),
+  featuredTv({
     id: "tv:cbsn",
-    kind: "tv",
-    title: "CBS News",
+    title: "CBS News 24/7",
     subtitle: "News • United States",
     src: "https://cbsn-us.cbsnstream.cbsnews.com/out/v1/55a8648e8f134e82a470f83d562deeca/master.m3u8",
-    streamType: "hls",
-    isLive: true,
     category: "news",
     country: "United States",
     countryCode: "us",
     badge: "HD",
-  },
-  {
-    id: "tv:dwes",
-    kind: "tv",
-    title: "DW Español",
-    subtitle: "News • Germany",
-    src: "https://dwamdstream104.akamaized.net/hls/live/2015530/dwstream104/index.m3u8",
-    streamType: "hls",
-    isLive: true,
-    category: "news",
-    country: "Germany",
-    countryCode: "de",
-    badge: "HD",
-  },
-  {
+    language: "English",
+    officialUrl: "https://www.cbsnews.com/live/",
+  }),
+  featuredTv({
     id: "tv:nhk",
-    kind: "tv",
     title: "NHK World-Japan",
-    subtitle: "News • Japan",
+    subtitle: "Culture & news • Japan",
     src: "https://nhkwlive-ojp.akamaized.net/hls/live/2003459/nhkwlive-ojp-en/index.m3u8",
-    streamType: "hls",
-    isLive: true,
-    category: "news",
+    category: "culture",
     country: "Japan",
     countryCode: "jp",
     badge: "HD",
-  },
-  {
+    language: "English",
+    officialUrl: "https://www3.nhk.or.jp/nhkworld/en/live/",
+  }),
+  featuredTv({
     id: "tv:cgtn",
-    kind: "tv",
-    title: "CGTN",
-    subtitle: "News • China",
+    title: "CGTN English",
+    subtitle: "World news • China",
     src: "https://news.cgtn.com/resource/live/english/cgtn-news.m3u8",
-    streamType: "hls",
-    isLive: true,
     category: "news",
     country: "China",
+    countryCode: "cn",
     badge: "HD",
-  },
-  {
+    language: "English",
+    officialUrl: "https://www.cgtn.com/tv",
+  }),
+  featuredTv({
     id: "tv:trt",
-    kind: "tv",
     title: "TRT World",
-    subtitle: "News • Türkiye",
+    subtitle: "World news • Türkiye",
     src: "https://tv-trtworld.medya.trt.com.tr/master.m3u8",
-    streamType: "hls",
-    isLive: true,
     category: "news",
     country: "Türkiye",
+    countryCode: "tr",
     badge: "HD",
-  },
-  {
-    id: "tv:ajarabic",
-    kind: "tv",
-    title: "Al Jazeera Arabic",
-    subtitle: "News • Qatar",
-    src: "https://live-hls-web-aja.getaj.net/AJA/index.m3u8",
-    streamType: "hls",
-    isLive: true,
-    category: "news",
-    country: "Qatar",
-    badge: "HD",
-  },
-  {
-    id: "tv:france24es",
-    kind: "tv",
-    title: "France 24 Español",
-    subtitle: "News • France",
-    src: "https://static.france24.com/live/F24_ES_LO_HLS/live_web.m3u8",
-    streamType: "hls",
-    isLive: true,
-    category: "news",
-    country: "France",
-    countryCode: "fr",
-    badge: "HD",
-  },
-  {
-    id: "tv:euronews",
-    kind: "tv",
-    title: "Euronews",
-    subtitle: "News • Europe",
-    src: "https://rakuten-euronews-1-gb.samsung.wurl.tv/playlist.m3u8",
-    streamType: "hls",
-    isLive: true,
-    category: "news",
-    country: "Europe",
-    badge: "HD",
-  },
-  {
-    id: "tv:fashiontv",
-    kind: "tv",
-    title: "FashionTV",
-    subtitle: "Lifestyle • Global",
-    src: "https://fash1043.cloudycdn.services/slive/ftv_paris_adaptive.smil/playlist.m3u8",
-    streamType: "hls",
-    isLive: true,
-    category: "entertainment",
-    country: "Global",
-    badge: "HD",
-  },
-  {
+    language: "English",
+    officialUrl: "https://www.trtworld.com/live",
+  }),
+  featuredTv({
     id: "tv:rtpi",
-    kind: "tv",
     title: "RTP Internacional",
-    subtitle: "General • Portugal",
+    subtitle: "Culture & entertainment • Portugal",
     src: "https://streaming-live.rtp.pt/liverepeater/smil:rtpi.smil/playlist.m3u8",
-    streamType: "hls",
-    isLive: true,
-    category: "entertainment",
+    category: "culture",
     country: "Portugal",
+    countryCode: "pt",
     badge: "HD",
-  },
+    language: "Portuguese",
+    officialUrl: "https://www.rtp.pt/play/direto/rtpinternacional",
+  }),
 ];

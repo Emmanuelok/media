@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Globe, ExternalLink, Tv, Info } from "lucide-react";
+import { Antenna, ExternalLink, Globe, Info, RadioTower, ShieldCheck, Tv } from "lucide-react";
 import {
   BROADCASTERS,
   BROADCASTER_CATEGORIES,
@@ -17,7 +17,7 @@ import { EmptyState } from "@/components/ui/States";
 function BroadcasterCard({ x }: { x: Broadcaster }) {
   const free = x.access === "free";
   return (
-    <div className="flex flex-col rounded-2xl border border-white/10 bg-surface/50 p-4">
+    <article className="network-card flex flex-col rounded-xl border border-white/10 bg-surface/50 p-4">
       <div className="flex items-start gap-3">
         <Artwork
           src={x.logo}
@@ -68,12 +68,14 @@ function BroadcasterCard({ x }: { x: Broadcaster }) {
           <ExternalLink className="h-3.5 w-3.5" /> Official
         </a>
       </div>
-    </div>
+    </article>
   );
 }
 
 export default function ChannelsPage() {
   const countries = useMemo(() => broadcasterCountries(), []);
+  const freeCount = useMemo(() => BROADCASTERS.filter((item) => item.access === "free").length, []);
+  const providerCount = BROADCASTERS.length - freeCount;
   const [cat, setCat] = useState("all");
   const [country, setCountry] = useState("all");
   const [query, setQuery] = useState("");
@@ -91,7 +93,7 @@ export default function ChannelsPage() {
   const catChips = [{ id: "all", label: "All" }, ...BROADCASTER_CATEGORIES.map((c) => ({ id: c.id, label: c.label, emoji: c.emoji }))];
 
   return (
-    <div className="animate-fade-up">
+    <div className="animate-fade-up route-network-atlas">
       <PageHeader
         icon={Globe}
         title="Global Networks"
@@ -100,6 +102,47 @@ export default function ChannelsPage() {
         image="/aurora/global-world.webp"
         eyebrow="Across every border"
       />
+
+      <section className="network-atlas-console" aria-labelledby="network-atlas-title">
+        <div className="network-atlas-visual" aria-hidden="true">
+          <div className="atlas-orbit atlas-orbit-one" />
+          <div className="atlas-orbit atlas-orbit-two" />
+          <div className="atlas-orbit atlas-orbit-three" />
+          <span className="atlas-node atlas-node-one" />
+          <span className="atlas-node atlas-node-two" />
+          <span className="atlas-node atlas-node-three" />
+          <Globe className="h-16 w-16" />
+        </div>
+        <div className="network-atlas-copy">
+          <span>
+            <RadioTower className="h-3.5 w-3.5" />
+            Network atlas / source map
+          </span>
+          <h2 id="network-atlas-title">Find the right signal—not a workaround.</h2>
+          <p>
+            Aurora distinguishes public streams from provider-only destinations, preserves regional
+            access rules, and always keeps the official network page within reach.
+          </p>
+        </div>
+        <dl>
+          <div>
+            <dt>Countries</dt>
+            <dd>{countries.length}</dd>
+          </div>
+          <div>
+            <dt>Public destinations</dt>
+            <dd>{freeCount}</dd>
+          </div>
+          <div>
+            <dt>Provider destinations</dt>
+            <dd>{providerCount}</dd>
+          </div>
+          <div>
+            <dt>Rights model</dt>
+            <dd>Official first</dd>
+          </div>
+        </dl>
+      </section>
 
       <div className="mb-5 flex items-start gap-2 rounded-xl border border-white/10 bg-surface/40 p-3 text-xs text-muted">
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-cyan-400" />
@@ -112,7 +155,7 @@ export default function ChannelsPage() {
         </p>
       </div>
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="network-filterbar mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -137,7 +180,16 @@ export default function ChannelsPage() {
 
       {filtered.length ? (
         <>
-          <p className="mb-3 text-sm text-muted">{filtered.length} networks</p>
+          <div className="network-results-heading">
+            <span>
+              <Antenna className="h-3.5 w-3.5" />
+              {filtered.length} networks in view
+            </span>
+            <span>
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Access labels preserved
+            </span>
+          </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((x) => (
               <BroadcasterCard key={x.id} x={x} />

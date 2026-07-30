@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowUpRight, Sparkles } from "lucide-react";
-import CinematicHome from "@/components/landing/CinematicHome";
+import SignalHouse from "@/components/landing/SignalHouse";
 import { Shelf } from "@/components/media/Media";
 import { LiveShelf } from "@/components/live/LiveShelf";
 import { VIDEOS, TRACKS } from "@/lib/catalog";
@@ -19,7 +19,7 @@ export default function Home() {
 
   return (
     <div className="animate-fade-up">
-      <CinematicHome onAsk={() => openConcierge()} />
+      <SignalHouse onAsk={() => openConcierge()} />
 
       <section className="landing-section routine-flightdeck" aria-labelledby="routine-flightdeck-title">
         <div className="landing-section-heading">

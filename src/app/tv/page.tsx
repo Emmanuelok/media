@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Tv, Info } from "lucide-react";
+import { ExternalLink, Globe2, Info, Play, ShieldCheck, Tv } from "lucide-react";
 import {
   FEATURED_TV,
   TV_CATEGORIES,
@@ -14,6 +14,8 @@ import { Browse } from "@/components/live/Browse";
 import { ChannelGrid } from "@/components/live/ChannelGrid";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Chips } from "@/components/ui/Chips";
+import { Artwork } from "@/components/ui/Artwork";
+import { usePlayer } from "@/lib/store";
 
 function TvInner() {
   const sp = useSearchParams();
@@ -23,6 +25,8 @@ function TvInner() {
   const [sel, setSel] = useState(
     country ? `country:${country}` : matchedCat ? `cat:${matchedCat.id}` : "featured",
   );
+  const play = usePlayer((state) => state.play);
+  const lead = FEATURED_TV[0];
 
   const catChips = [
     { id: "featured", label: "Featured", emoji: "⭐" },
@@ -35,7 +39,7 @@ function TvInner() {
   }));
 
   return (
-    <div className="animate-fade-up">
+    <div className="animate-fade-up route-live-deck">
       <PageHeader
         icon={Tv}
         title="Live TV"
@@ -45,16 +49,87 @@ function TvInner() {
         eyebrow="Global signal"
       />
 
-      <Chips className="mb-3" items={catChips} value={sel} onChange={setSel} />
-      <Chips className="mb-5" items={countryChips} value={sel} onChange={setSel} />
+      {lead && (
+        <section className="live-deck-stage" aria-labelledby="live-deck-title">
+          <div className="live-deck-screen">
+            <Artwork
+              src={lead.thumbnail}
+              title={lead.title}
+              subtitle={lead.country}
+              kind="tv"
+              showMeta
+              rounded="rounded-none"
+              className="h-full w-full"
+            />
+            <span className="live-deck-corners" aria-hidden="true" />
+          </div>
+          <div className="live-deck-copy">
+            <span className="live-deck-kicker">
+              <span />
+              Live deck / first signal
+            </span>
+            <h2 id="live-deck-title">{lead.title}</h2>
+            <p>
+              {lead.description ||
+                "A public live transmission with automatic reachability checks and an official destination when embedded playback is unavailable."}
+            </p>
+            <dl>
+              <div>
+                <dt>Source</dt>
+                <dd>{lead.sourceLabel || "Public feed"}</dd>
+              </div>
+              <div>
+                <dt>Language</dt>
+                <dd>{lead.language || "Not listed"}</dd>
+              </div>
+              <div>
+                <dt>Region</dt>
+                <dd>{lead.country || "Worldwide"}</dd>
+              </div>
+            </dl>
+            <div className="live-deck-actions">
+              <button onClick={() => play(lead, FEATURED_TV)} className="signal-action-primary">
+                <Play className="h-4 w-4" fill="currentColor" />
+                Watch live
+              </button>
+              {lead.officialUrl && (
+                <a
+                  href={lead.officialUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="signal-action-secondary"
+                >
+                  Official page
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              )}
+            </div>
+          </div>
+          <div className="live-deck-status" aria-label="Live source safeguards">
+            <span>
+              <ShieldCheck className="h-4 w-4" />
+              Signal checked before trust
+            </span>
+            <span>
+              <Globe2 className="h-4 w-4" />
+              Regional limits respected
+            </span>
+          </div>
+        </section>
+      )}
+
+      <div className="live-filter-dock">
+        <span className="live-filter-label">Explore by signal</span>
+        <Chips items={catChips} value={sel} onChange={setSel} />
+        <Chips items={countryChips} value={sel} onChange={setSel} />
+      </div>
 
       <div className="mb-6 flex items-start gap-2 rounded-xl border border-white/10 bg-surface/40 p-3 text-xs text-muted">
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
         <p>
-          Channels are public free-to-air streams from the open iptv-org directory. Aurora routes
-          HTTP-only or CORS-blocked streams through a built-in proxy to maximise playback, but
-          availability still varies by region and over time — some may be geo-blocked. Premium / 4K
-          sports broadcasts (e.g. the World Cup) require separate licensing.
+          Aurora indexes public stream links and does not host broadcasts. Availability can change
+          by region and time. If a source is unavailable, use its official broadcaster page; Aurora
+          never bypasses subscriptions, geographic restrictions, DRM or licensing.
         </p>
       </div>
 
@@ -81,7 +156,7 @@ function TvInner() {
 
 export default function Page() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div className="min-h-[60vh] animate-pulse rounded-xl bg-white/[0.03]" />}>
       <TvInner />
     </Suspense>
   );

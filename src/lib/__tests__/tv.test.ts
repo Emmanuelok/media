@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseM3U } from "@/lib/tv";
+import { FEATURED_TV, parseM3U } from "@/lib/tv";
 
 const SAMPLE = [
   "#EXTM3U",
@@ -29,5 +29,49 @@ describe("parseM3U", () => {
     expect(dw.kind).toBe("tv");
     expect(dw.isLive).toBe(true);
     expect(sky.badge).toBe("4K");
+  });
+
+  it("uses the stream URL in deterministic candidate ids", () => {
+    const playlist = [
+      "#EXTM3U",
+      '#EXTINF:-1 tvg-id="shared.channel",Shared Channel',
+      "https://one.example.com/live.m3u8",
+      '#EXTINF:-1 tvg-id="shared.channel",Shared Channel',
+      "https://two.example.com/live.m3u8",
+    ].join("\n");
+
+    const first = parseM3U(playlist);
+    const second = parseM3U(playlist);
+    expect(first.map((item) => item.id)).toEqual(second.map((item) => item.id));
+    expect(new Set(first.map((item) => item.id)).size).toBe(2);
+    expect(first[0].id).toMatch(/^tv:shared-channel:/);
+  });
+
+  it("adds public-catalogue provenance and language metadata", () => {
+    const playlist = [
+      "#EXTM3U",
+      '#EXTINF:-1 tvg-id="culture.example" tvg-language="English;French" tvg-country="CA" group-title="Culture",Culture World',
+      "https://example.com/culture.m3u8",
+    ].join("\n");
+    const [item] = parseM3U(playlist);
+
+    expect(item.languages).toEqual(["English", "French"]);
+    expect(item.language).toBe("English");
+    expect(item.countryCode).toBe("ca");
+    expect(item.health).toBe("unknown");
+    expect(item.sourceKind).toBe("public-directory");
+  });
+});
+
+describe("FEATURED_TV", () => {
+  it("has unique ids and official-page fallbacks for every feed", () => {
+    expect(new Set(FEATURED_TV.map((item) => item.id)).size).toBe(FEATURED_TV.length);
+    for (const item of FEATURED_TV) {
+      expect(item.officialUrl).toMatch(/^https:\/\//);
+      expect(item.sourceKind).toBe("official");
+      expect(item.sourceLabel).toBeTruthy();
+      expect(item.health).toBe("likely");
+      expect(item.language).toBeTruthy();
+    }
   });
 });

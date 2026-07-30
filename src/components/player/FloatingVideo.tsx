@@ -1,6 +1,6 @@
 "use client";
 
-import { type RefObject, useEffect, useRef, useState } from "react";
+import { type RefObject, useRef, useState } from "react";
 import { usePlayer } from "@/lib/store";
 import { formatTime, cn } from "@/lib/utils";
 import {
@@ -18,6 +18,7 @@ import {
   Heart,
   PictureInPicture2,
   Gauge,
+  RotateCcw,
 } from "lucide-react";
 
 /**
@@ -28,9 +29,11 @@ import {
 export default function FloatingVideo({
   videoRef,
   visible,
+  onRetry,
 }: {
   videoRef: RefObject<HTMLVideoElement | null>;
   visible: boolean;
+  onRetry: () => void;
 }) {
   const frameRef = useRef<HTMLDivElement>(null);
   const s = usePlayer();
@@ -39,6 +42,8 @@ export default function FloatingVideo({
   const pct = s.duration > 0 && isFinite(s.duration) ? (s.progress / s.duration) * 100 : 0;
 
   const favorited = !!c && s.favorites.some((f) => f.id === c.id);
+  const hasNext = s.queue.length > 1;
+  const skipUnavailable = () => (hasNext ? s.next() : s.stop());
 
   // HLS quality levels
   const [showQuality, setShowQuality] = useState(false);
@@ -52,29 +57,6 @@ export default function FloatingVideo({
         ? `${activeQ.height}p`
         : "Auto"
       : qLabel(s.qualities[s.pinnedQuality] ?? { height: 0, bitrate: 0 });
-
-  // Auto-skip dead live channels: when a TV stream errors and there are more in
-  // the queue, advance to the next channel after a short, cancelable countdown.
-  const queueLen = s.queue.length;
-  const canAutoSkip = !!s.error && c?.kind === "tv" && queueLen > 1;
-  const [autoSkip, setAutoSkip] = useState(true);
-  const [countdown, setCountdown] = useState(0);
-  const next = s.next;
-
-  useEffect(() => {
-    if (!canAutoSkip || !autoSkip) {
-      setCountdown(0);
-      return;
-    }
-    setCountdown(6);
-    const iv = setInterval(() => setCountdown((n) => Math.max(0, n - 1)), 1000);
-    const to = setTimeout(() => next(), 6000);
-    return () => {
-      clearInterval(iv);
-      clearTimeout(to);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canAutoSkip, autoSkip, c?.id]);
 
   const goFullscreen = () => {
     const el = frameRef.current;
@@ -113,7 +95,6 @@ export default function FloatingVideo({
             : "rounded-xl shadow-2xl ring-1 ring-white/15",
         )}
       >
-        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
         <video
           ref={videoRef}
           playsInline
@@ -123,39 +104,46 @@ export default function FloatingVideo({
 
         {/* Loading / error overlays */}
         {s.loading && !s.error && (
-          <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black/30">
+          <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center bg-black/30">
             <Loader2 className="h-10 w-10 animate-spin text-white/90" />
           </div>
         )}
         {s.error && (
-          <div className="absolute inset-0 grid place-items-center bg-black/80 p-4 text-center">
+          <div
+            className="absolute inset-0 z-20 grid place-items-center bg-black/85 p-4 text-center"
+            role="alert"
+            aria-live="assertive"
+          >
             <div className="max-w-sm">
               <AlertTriangle className="mx-auto h-8 w-8 text-amber-400" />
-              <p className="mt-2 text-sm text-white">{s.error}</p>
-              {canAutoSkip && autoSkip && countdown > 0 && (
-                <p className="mt-1 text-xs text-muted">Trying next channel in {countdown}s…</p>
-              )}
-              <div className="mt-3 flex items-center justify-center gap-2">
+              <p className="mt-2 text-sm font-medium text-white">Playback unavailable</p>
+              <p className="mt-1 text-xs leading-relaxed text-white/70">{s.error}</p>
+              <div className="mt-4 flex items-center justify-center gap-2">
                 <button
-                  onClick={s.next}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
+                  type="button"
+                  onClick={onRetry}
+                  className="inline-flex h-11 min-w-24 items-center justify-center gap-1.5 rounded-full bg-white px-4 text-xs font-semibold text-black transition hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  aria-label={`Retry ${c?.title || "video"}`}
                 >
-                  <SkipForward className="h-3.5 w-3.5" /> {canAutoSkip ? "Next now" : "Try next"}
+                  <RotateCcw className="h-4 w-4" />
+                  Retry
                 </button>
-                {canAutoSkip && autoSkip && (
-                  <button
-                    onClick={() => setAutoSkip(false)}
-                    className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
-                  >
-                    Cancel
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={skipUnavailable}
+                  className="inline-flex h-11 min-w-24 items-center justify-center gap-1.5 rounded-full bg-white/10 px-4 text-xs font-semibold text-white transition hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  aria-label={hasNext ? "Skip to next item" : "Skip unavailable item and close player"}
+                >
+                  <SkipForward className="h-4 w-4" />
+                  {hasNext ? "Next" : "Skip"}
+                </button>
               </div>
             </div>
           </div>
         )}
 
         {/* Controls */}
+        {!s.error && (
         <div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-b from-black/60 via-transparent to-black/70 opacity-0 transition-opacity duration-200 group-hover:opacity-100 [&:has(:focus-visible)]:opacity-100">
           {/* Top */}
           <div className="flex items-start justify-between gap-2 p-2.5">
@@ -285,6 +273,7 @@ export default function FloatingVideo({
             </button>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
