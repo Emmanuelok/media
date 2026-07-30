@@ -252,7 +252,7 @@ export const TRACKS: MediaItem[] = Array.from({ length: 16 }, (_, i) => {
     src: `${SH}${n}.mp3`,
     streamType: "file" as const,
     category: ["Pop", "Electronic", "Lo-Fi", "Indie", "Ambient", "Dance"][i % 6],
-    metric: `${(Math.floor(Math.random() * 90) + 10)}M plays`,
+    metric: `${((i * 37 + 73) % 87) + 10}M plays`,
     duration: 240 + i * 7,
     audioOnly: true,
   };
