@@ -1,0 +1,365 @@
+{
+  "schema_version": "1.0",
+  "project": {
+    "id": "aurora-living-signal",
+    "name": "Aurora — The Living Signal",
+    "mode": "screen-production",
+    "objective": "Turn Aurora into a trustworthy, cinematic global media house whose live-status, discovery, playback, and AI capabilities are immediately legible.",
+    "audience": "General-audience viewers exploring film, music, public live television, and radio on desktop and mobile.",
+    "governing_idea": "One amber-cyan signal travels through a believable near-future media world and changes form with each medium.",
+    "status": "implementation"
+  },
+  "creative_system": {
+    "visual_thesis": "A single motivated transmission line reveals tactile architecture, real adult users, and the working state of the product.",
+    "anti_goals": [
+      "generic neon spectacle",
+      "floating-card collage",
+      "unmotivated glass effects",
+      "baked interface text",
+      "recognizable broadcaster or entertainment brands"
+    ],
+    "palette": {
+      "dominant": [
+        "deep ink",
+        "charcoal",
+        "warm ivory"
+      ],
+      "accent": [
+        "signal cyan",
+        "live coral",
+        "sound gold"
+      ],
+      "contrast": "matte dark architecture with precise warm human light and a restrained cyan transmission edge"
+    },
+    "composition": "One primary subject group on the right third, readable layered depth, and calm left-side negative space for editable web copy.",
+    "camera": "Stable 35 mm perspective with a restrained, physically coherent orbit that returns to its opening frame.",
+    "lighting": "Warm motivated practical key light, cyan edge light, deep ink shadows, and controlled coral reflections.",
+    "typography": "All product copy remains editable HTML with high contrast and no text generated inside scene media.",
+    "motion": "The signal completes one purposeful pulse cycle; camera and subjects return to the first-frame state for a seamless loop.",
+    "sound": "Strategic silence: every web loop is delivered without generated audio.",
+    "interface": "Responsive, keyboard accessible, touch-safe, and equivalent under reduced-motion and data-saver preferences.",
+    "invariants": [
+      "Keep the amber-cyan signal motif, material palette, right-third adult composition, stable horizon, and negative-space convention consistent.",
+      "Use fictional adults only, with no logos, copyrighted screens, alcohol, smoking, weapons, sexual content, or dangerous activity.",
+      "Use motion to explain transmission and state rather than decorate the interface."
+    ],
+    "permitted_variations": [
+      "Adapt the signal into a film strip, waveform, world arc, tuner band, or intent path by route.",
+      "Adapt framing to desktop and mobile while preserving subject identity and readable negative space."
+    ]
+  },
+  "assets": [
+    {
+      "id": "ast-hero-keyframe",
+      "type": "image",
+      "source": "public/aurora/hero-cinema.webp",
+      "role": "start-and-end keyframe",
+      "rights_status": "cleared",
+      "description": "Original AI-generated Aurora hero scene featuring fictional adults and no third-party marks.",
+      "notes": "Upload as both start and end reference for loop continuity."
+    },
+    {
+      "id": "ast-higgsfield-hero-master",
+      "type": "video",
+      "source": "afd86577-d21a-44a6-8374-b10051a8b8da",
+      "role": "cinematic hero master",
+      "rights_status": "cleared",
+      "description": "Cinema Studio Video 3.0 generation created from the approved project keyframe.",
+      "notes": "Silent 1920x1080 source. Web delivery uses a 10-second forward/reverse loop at public/aurora-motion/living-signal-web.mp4."
+    }
+  ],
+  "elements": [
+    {
+      "id": "elm-signal",
+      "type": "visual-motif",
+      "name": "The Living Signal",
+      "description": "A thin amber-cyan line that travels through the architecture, reveals media states, and completes one loop.",
+      "anchors": [
+        "amber core",
+        "cyan edge",
+        "single continuous path"
+      ],
+      "asset_ids": [],
+      "external_element_id": ""
+    },
+    {
+      "id": "elm-adult-viewers",
+      "type": "character-group",
+      "name": "Aurora viewers",
+      "description": "Three diverse fictional adults, clearly age 25–45, in elegant contemporary smart-casual clothing, including one adult wheelchair user.",
+      "anchors": [
+        "right-third placement",
+        "minimal natural movement",
+        "respectful realistic wheelchair geometry"
+      ],
+      "asset_ids": [
+        "ast-hero-keyframe"
+      ],
+      "external_element_id": ""
+    },
+    {
+      "id": "elm-atrium",
+      "type": "environment",
+      "name": "Signal House atrium",
+      "description": "A believable near-future media atrium built from obsidian stone, brushed aluminum, translucent glass, and atmospheric depth at night.",
+      "anchors": [
+        "circular viewing deck",
+        "central glass sphere",
+        "left-side negative space",
+        "warm practical and cyan edge lighting"
+      ],
+      "asset_ids": [
+        "ast-hero-keyframe"
+      ],
+      "external_element_id": ""
+    }
+  ],
+  "scenes": [
+    {
+      "id": "scn-hero",
+      "title": "The Living Signal",
+      "summary": "A single signal cycles through cinema, music, broadcast, and radio environments while adults experience the media house.",
+      "environment_id": "elm-atrium",
+      "shot_ids": [
+        "sh-hero-master"
+      ]
+    }
+  ],
+  "shots": [
+    {
+      "id": "sh-hero-master",
+      "scene_id": "scn-hero",
+      "purpose": "Create the home-page cinematic master and establish the visual law for every route.",
+      "duration_s": 10,
+      "subject_ids": [
+        "elm-adult-viewers",
+        "elm-signal"
+      ],
+      "environment_id": "elm-atrium",
+      "action": "The signal travels through floor channels, rises into a glass sphere, and unfolds into four original abstract media environments before returning to its opening position.",
+      "composition": "Fictional adults on the right third with dark, uncluttered left-side copy space.",
+      "camera": "One slow clockwise micro-orbit with subtle forward drift, returning precisely to the starting framing.",
+      "lighting": "Deep ink shadows, warm amber skin key, cyan edge light, and restrained coral reflections.",
+      "motion": "One complete signal pulse; minimal breathing and head movement; matching first and final frames.",
+      "vfx": "Physically integrated signal channels, abstract picture planes, restrained haze, and subtle material reflections.",
+      "audio": "Silent.",
+      "copy": "",
+      "continuity": [
+        "Preserve adult identities, wheelchair geometry, wardrobe, environment geometry, signal path, horizon, and light direction.",
+        "First and final frames must match for a seamless loop."
+      ],
+      "references": [
+        {
+          "asset_id": "ast-hero-keyframe",
+          "role": "start_image"
+        },
+        {
+          "asset_id": "ast-hero-keyframe",
+          "role": "end_image"
+        }
+      ],
+      "exclusions": [
+        "minors",
+        "real people or celebrities",
+        "text, captions, numbers, logos, brands, or watermarks",
+        "alcohol, smoking, weapons, violence, sexual content, or dangerous activity",
+        "copyrighted footage",
+        "identity drift, extra limbs, face drift, flicker, geometry morphing, abrupt movement, or camera shake"
+      ],
+      "output": {
+        "type": "video",
+        "aspect_ratio": "16:9",
+        "resolution": "1080p",
+        "frame_rate": 24
+      },
+      "dependencies": [
+        "ast-hero-keyframe"
+      ],
+      "status": "completed"
+    }
+  ],
+  "screens": [
+    {
+      "id": "screen-home",
+      "route": "/",
+      "role": "cinematic signal-house entry",
+      "motion_source": "del-hero-16x9",
+      "reduced_motion_fallback": "public/aurora/hero-cinema.webp"
+    },
+    {
+      "id": "screen-live",
+      "route": "/tv",
+      "role": "health-first live deck",
+      "motion_source": "planned-live-tv-loop",
+      "reduced_motion_fallback": "public/aurora/live-tv-world.webp"
+    },
+    {
+      "id": "screen-radio",
+      "route": "/radio",
+      "role": "world tuner",
+      "motion_source": "planned-radio-loop",
+      "reduced_motion_fallback": "public/aurora/radio-world.webp"
+    }
+  ],
+  "deliverables": [
+    {
+      "id": "del-hero-16x9",
+      "type": "video",
+      "title": "Living Signal hero master",
+      "channel": "web",
+      "source_ids": [
+        "sh-hero-master"
+      ],
+      "aspect_ratio": "16:9",
+      "dimensions": "1920x1080",
+      "duration_s": 10,
+      "frame_rate": 24,
+      "format": "mp4",
+      "language": "none",
+      "captions": false,
+      "alt_text": "A luminous signal moves through a futuristic media atrium as three adults explore cinema, music, television, and radio.",
+      "variant_of": "",
+      "version": 1,
+      "status": "integrated"
+    },
+    {
+      "id": "del-supporting-loops",
+      "type": "video-batch",
+      "title": "Six route loops",
+      "channel": "web",
+      "source_ids": [
+        "planned-watch-loop",
+        "planned-music-loop",
+        "planned-live-tv-loop",
+        "planned-radio-loop",
+        "planned-global-loop",
+        "planned-ai-loop"
+      ],
+      "aspect_ratio": "16:9",
+      "dimensions": "1280x720",
+      "duration_s": 6,
+      "frame_rate": 24,
+      "format": "mp4",
+      "language": "none",
+      "captions": false,
+      "alt_text": "Route-specific Living Signal scenes.",
+      "variant_of": "del-hero-16x9",
+      "version": 1,
+      "status": "awaiting-batch-approval"
+    }
+  ],
+  "rights_and_claims": [
+    {
+      "id": "right-reference",
+      "category": "source-media",
+      "description": "The uploaded keyframe is original AI-generated project artwork with fictional adults and no third-party logos or copyrighted screens.",
+      "evidence": "public/aurora/hero-cinema.webp",
+      "status": "cleared"
+    },
+    {
+      "id": "right-live-sources",
+      "category": "broadcast-links",
+      "description": "Only public or official external streams are indexed; Aurora does not host or circumvent access restrictions.",
+      "evidence": "https://github.com/iptv-org/iptv",
+      "status": "implementation-constraint"
+    }
+  ],
+  "qa": {
+    "required_gates": [
+      "gate-brief",
+      "gate-direction",
+      "gate-look",
+      "gate-system",
+      "gate-rough",
+      "gate-finish",
+      "gate-delivery"
+    ],
+    "acceptance_threshold": 85,
+    "critical_failures": [
+      "identity drift",
+      "distorted wheelchair geometry",
+      "baked text or third-party logos",
+      "unmatched first and final frames",
+      "flicker",
+      "unsafe or age-inappropriate content",
+      "missing reduced-motion fallback"
+    ],
+    "review_notes": [
+      "The generated scene contains fictional adults only and no readable brands, logos, copyrighted screens, alcohol, smoking, weapons, violence, sexual content, or unsafe activity.",
+      "The model output did not return precisely to its opening composition; the web master was finished as a forward/reverse loop so the delivery seam is exact.",
+      "The web master is silent H.264, 1920x1080, 24 fps, 10 seconds, and approximately 3.2 MB."
+    ]
+  },
+  "gates": [
+    {
+      "id": "gate-brief",
+      "name": "Brief",
+      "status": "approved",
+      "evidence": [
+        "User requested a full futuristic sitewide redesign with cinematic Higgsfield animation and reliable global TV/radio."
+      ]
+    },
+    {
+      "id": "gate-direction",
+      "name": "Direction",
+      "status": "approved",
+      "evidence": [
+        "The Living Signal creative thesis and Signal House product architecture."
+      ]
+    },
+    {
+      "id": "gate-look",
+      "name": "Representative look",
+      "status": "approved",
+      "evidence": [
+        "public/aurora/hero-cinema.webp"
+      ]
+    },
+    {
+      "id": "gate-system",
+      "name": "Production system",
+      "status": "approved",
+      "evidence": [
+        "Cinema Studio Video 3.0 hero specification and Seedance 2.0 route-loop specification."
+      ]
+    },
+    {
+      "id": "gate-rough",
+      "name": "Coherent rough",
+      "status": "approved",
+      "evidence": [
+        "Higgsfield generation afd86577-d21a-44a6-8374-b10051a8b8da",
+        "public/aurora-motion/living-signal-web.mp4"
+      ]
+    },
+    {
+      "id": "gate-finish",
+      "name": "Finish",
+      "status": "approved",
+      "evidence": [
+        "Visual frame contact-sheet and first/last-frame review completed."
+      ]
+    },
+    {
+      "id": "gate-delivery",
+      "name": "Delivery",
+      "status": "approved",
+      "evidence": [
+        "Silent 1920x1080 H.264 delivery, 24 fps, 10 seconds, approximately 3.2 MB."
+      ]
+    }
+  ],
+  "assumptions": [
+    "The first redesign's local Aurora imagery remains approved visual source material.",
+    "The master is silent and decorative; all meaning remains available in editable interface copy.",
+    "The 262-credit supporting batch will not run without a separate reviewed execution decision."
+  ],
+  "open_questions": [
+    "Whether to execute the six supporting route loops after the hero master is reviewed."
+  ],
+  "risks": [
+    "Volatile third-party stream origins require freshness scoring and official-site fallbacks.",
+    "Autoplay video can affect data usage; use poster fallback under Save-Data and reduced motion.",
+    "AI video can drift despite matched references; reject and regenerate rather than masking a continuity failure."
+  ]
+}

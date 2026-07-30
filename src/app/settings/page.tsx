@@ -134,7 +134,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="animate-fade-up max-w-2xl">
+    <div className="animate-fade-up max-w-6xl systems-route">
       <PageHeader
         icon={SettingsIcon}
         title="Settings"
@@ -142,7 +142,7 @@ export default function SettingsPage() {
         accent="bg-gradient-to-br from-slate-500 to-zinc-700"
       />
 
-      <div className="space-y-5">
+      <div className="systems-settings-grid">
         <Section
           title="AI Concierge model"
           desc="Which Claude model powers recommendations. Requires ANTHROPIC_API_KEY on the server — otherwise the concierge uses an offline fallback."
@@ -247,7 +247,7 @@ export default function SettingsPage() {
               <p className="text-sm font-medium text-white">Sleep timer</p>
               <p className="text-xs text-muted">
                 {sleepAt
-                  ? `Playback pauses in about ${Math.max(1, Math.round((sleepAt - Date.now()) / 60000))} min.`
+                  ? "Sleep timer is active for this playback session."
                   : "Automatically pause after a set time."}
               </p>
             </div>

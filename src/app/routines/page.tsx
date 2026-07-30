@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Wand2, Play, Plus, Trash2, Clock } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock, Play, Plus, Sparkles, Trash2, Wand2, Waves } from "lucide-react";
 import { DEFAULT_ROUTINES, type Routine } from "@/lib/routines";
 import { useRoutines } from "@/lib/routines-store";
 import { useUI } from "@/lib/ui";
@@ -67,14 +67,65 @@ export default function RoutinesPage() {
   );
 
   return (
-    <div className="animate-fade-up">
+    <div className="animate-fade-up route-scenes">
       <PageHeader
         icon={Wand2}
         title="Routines"
         subtitle="One tap and Aurora sets the whole scene — powered by the autonomous AI agent"
         accent="bg-gradient-to-br from-violet-500 to-indigo-600"
+        image="/aurora/routines-world.webp"
+        eyebrow="Media in motion"
       />
 
+      <section className="scene-composer-map" aria-labelledby="scene-composer-title">
+        <div>
+          <span>
+            <Waves className="h-3.5 w-3.5" />
+            Scene composer
+          </span>
+          <h2 id="scene-composer-title">From intention to atmosphere.</h2>
+          <p>Every routine stays visible as a simple, reversible sequence.</p>
+        </div>
+        <ol>
+          <li>
+            <span>01</span>
+            <strong>Trigger</strong>
+            <small>Now or scheduled</small>
+          </li>
+          <ArrowRight aria-hidden="true" />
+          <li>
+            <span>02</span>
+            <strong>Intent</strong>
+            <small>Describe the scene</small>
+          </li>
+          <ArrowRight aria-hidden="true" />
+          <li>
+            <span>03</span>
+            <strong>Media</strong>
+            <small>Aurora builds the path</small>
+          </li>
+          <ArrowRight aria-hidden="true" />
+          <li>
+            <span>04</span>
+            <strong>Review</strong>
+            <small>You stay in control</small>
+          </li>
+        </ol>
+        <span className="scene-ready">
+          <CheckCircle2 className="h-4 w-4" />
+          Ready to compose
+        </span>
+      </section>
+
+      <div className="route-archive-heading">
+        <div>
+          <span>
+            <Sparkles className="h-3.5 w-3.5" />
+            STARTER SCENES
+          </span>
+          <h2>Choose an atmosphere</h2>
+        </div>
+      </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {DEFAULT_ROUTINES.map((r) => (
           <Card key={r.id} r={r} deletable={false} />
@@ -84,7 +135,8 @@ export default function RoutinesPage() {
         ))}
       </div>
 
-      <section className="mt-8 max-w-xl rounded-2xl border border-white/10 bg-surface/50 p-5">
+      <div className="scene-forms">
+      <section className="mt-8 rounded-xl border border-white/10 bg-surface/50 p-5">
         <h2 className="text-base font-bold text-white">Create a routine</h2>
         <p className="mt-0.5 text-sm text-muted">
           Describe what Aurora should set up — it runs through the autonomous agent.
@@ -113,7 +165,7 @@ export default function RoutinesPage() {
         </form>
       </section>
 
-      <section className="mt-6 max-w-xl rounded-2xl border border-white/10 bg-surface/50 p-5">
+      <section className="mt-8 rounded-xl border border-white/10 bg-surface/50 p-5">
         <h2 className="flex items-center gap-2 text-base font-bold text-white">
           <Clock className="h-4 w-4 text-accent" /> Scheduled routines
         </h2>
@@ -183,6 +235,7 @@ export default function RoutinesPage() {
           </ul>
         )}
       </section>
+      </div>
     </div>
   );
 }

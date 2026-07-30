@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "./signal-house.css";
 import AppShell from "@/components/shell/AppShell";
 
 const geistSans = Geist({
@@ -14,9 +15,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Aurora — AI Media House",
+  title: {
+    default: "Aurora — The Signal House",
+    template: "%s | Aurora",
+  },
   description:
-    "One home for everything: on-demand video, music, and live TV & radio from across the globe — curated by AI.",
+    "A cinematic AI media house for film, music, public live television and recently checked global radio.",
   applicationName: "Aurora",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "Aurora", statusBarStyle: "black-translucent" },
@@ -27,7 +31,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#08080c",
+  themeColor: "#020305",
 };
 
 export default function RootLayout({

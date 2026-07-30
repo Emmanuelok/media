@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { proxiedUrl, needsProxy, pool } from "@/lib/stream";
+import {
+  initialPlaybackUrl,
+  needsProxy,
+  pool,
+  proxiedUrl,
+  proxyFallbackUrl,
+} from "@/lib/stream";
 
 describe("proxiedUrl / needsProxy", () => {
   it("wraps a url through /api/stream", () => {
@@ -8,6 +14,23 @@ describe("proxiedUrl / needsProxy", () => {
   it("only http origins need proxying", () => {
     expect(needsProxy("http://x/y")).toBe(true);
     expect(needsProxy("https://x/y")).toBe(false);
+  });
+});
+
+describe("finite playback fallback", () => {
+  it("starts HTTPS directly unless proxying is explicitly forced", () => {
+    const src = "https://example.test/live.m3u8";
+    expect(initialPlaybackUrl(src)).toBe(src);
+    expect(initialPlaybackUrl(src, true)).toBe(proxiedUrl(src));
+  });
+
+  it("proxies HTTP immediately and offers at most one HTTPS fallback", () => {
+    const http = "http://example.test/live.m3u8";
+    const https = "https://example.test/live.m3u8";
+    expect(initialPlaybackUrl(http)).toBe(proxiedUrl(http));
+    expect(proxyFallbackUrl(https, https, false)).toBe(proxiedUrl(https));
+    expect(proxyFallbackUrl(https, proxiedUrl(https), false)).toBeNull();
+    expect(proxyFallbackUrl(https, https, true)).toBeNull();
   });
 });
 

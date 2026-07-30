@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type HlsType from "hls.js";
 import { usePlayer } from "@/lib/store";
 import { isHls } from "@/lib/utils";
-import { proxiedUrl, needsProxy } from "@/lib/stream";
+import { initialPlaybackUrl, proxyFallbackUrl } from "@/lib/stream";
 import { useSettings } from "@/lib/settings";
 import NowPlayingBar from "./NowPlayingBar";
 import FloatingVideo from "./FloatingVideo";
@@ -23,8 +23,13 @@ export default function PlayerHost() {
   const hlsRef = useRef<HlsType | null>(null);
   const originalSrcRef = useRef<string>("");
   const proxyTriedRef = useRef(false);
+  const mediaRecoveriesRef = useRef(0);
+  const loadFailedRef = useRef(false);
+  const activeElementRef = useRef<HTMLMediaElement | null>(null);
+  const nativeErrorHandlerRef = useRef<((el: HTMLMediaElement) => void) | null>(null);
   const pendingResumeRef = useRef(0);
   const lastSaveRef = useRef(0);
+  const [reloadToken, setReloadToken] = useState(0);
 
   const current = usePlayer((s) => s.current);
   const isPlaying = usePlayer((s) => s.isPlaying);
@@ -35,6 +40,15 @@ export default function PlayerHost() {
   const levelRequest = usePlayer((s) => s.levelRequest);
 
   const isVideo = !!current && (current.kind === "video" || current.kind === "tv");
+
+  const retryCurrent = useCallback(() => {
+    const S = usePlayer.getState();
+    if (!S.current) return;
+    S._setError(null);
+    S._setLoading(true);
+    S.resume();
+    setReloadToken((token) => token + 1);
+  }, []);
 
   // Wire media element events -> store, once, for both elements.
   useEffect(() => {
@@ -88,12 +102,19 @@ export default function PlayerHost() {
         S()._saveProgress(c.id, el.currentTime, el.duration);
       }
     };
-    const onWaiting = () => S()._setLoading(true);
-    const onPlaying = () => S()._setLoading(false);
+    const onWaiting = () => {
+      const state = S();
+      if (!state.error) state._setLoading(true);
+    };
+    const onPlaying = () => S()._setError(null);
     const onEnded = () => S().ended();
-    const onErr = () => {
+    const onErr = (e: Event) => {
+      const el = e.currentTarget as HTMLMediaElement;
+      if (el !== activeElementRef.current) return;
       if (hlsRef.current) return; // HLS errors handled by the hls.js handler (with proxy fallback)
-      S()._setError("Playback failed — this source may be offline, geo-blocked, or HTTP-only.");
+      const handler = nativeErrorHandlerRef.current;
+      if (handler) handler(el);
+      else S()._setError("Playback failed — this source may be offline or unavailable.");
     };
 
     const handlers: [string, EventListener][] = [
@@ -116,6 +137,7 @@ export default function PlayerHost() {
     const item = current;
     const el = isVideo ? videoRef.current : audioRef.current;
     const other = isVideo ? audioRef.current : videoRef.current;
+    activeElementRef.current = el;
     if (other) {
       try {
         other.pause();
@@ -124,10 +146,17 @@ export default function PlayerHost() {
         /* noop */
       }
     }
-    if (!el || !item) return;
+    if (!el || !item) {
+      nativeErrorHandlerRef.current = null;
+      activeElementRef.current = null;
+      return;
+    }
 
     let cancelled = false;
+    let activeSrc = "";
     proxyTriedRef.current = false;
+    mediaRecoveriesRef.current = 0;
+    loadFailedRef.current = false;
     originalSrcRef.current = item.src;
     pendingResumeRef.current = item.kind === "video" ? usePlayer.getState().progressById[item.id] || 0 : 0;
     usePlayer.getState()._setLoading(true);
@@ -136,7 +165,22 @@ export default function PlayerHost() {
     const wantsHls = item.streamType === "hls" || isHls(item.src);
     const native = !!el.canPlayType("application/vnd.apple.mpegurl");
 
+    const fail = (message: string) => {
+      if (cancelled || loadFailedRef.current) return;
+      loadFailedRef.current = true;
+      try {
+        el.pause();
+      } catch {
+        /* noop */
+      }
+      const S = usePlayer.getState();
+      S._setPlaying(false);
+      S._setError(message);
+    };
+
     const start = async (src: string) => {
+      if (cancelled) return;
+      activeSrc = src;
       if (hlsRef.current) {
         hlsRef.current.destroy();
         hlsRef.current = null;
@@ -157,28 +201,46 @@ export default function PlayerHost() {
           });
           hlsRef.current = hls;
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            if (cancelled || hlsRef.current !== hls) return;
             usePlayer
               .getState()
               ._setQualities(
                 hls.levels.map((l, i) => ({ index: i, height: l.height || 0, bitrate: l.bitrate || 0 })),
               );
           });
-          hls.on(Hls.Events.LEVEL_SWITCHED, (_e, data) =>
-            usePlayer.getState()._setCurrentQuality(data.level),
-          );
+          hls.on(Hls.Events.LEVEL_SWITCHED, (_e, data) => {
+            if (cancelled || hlsRef.current !== hls) return;
+            usePlayer.getState()._setCurrentQuality(data.level);
+          });
           hls.on(Hls.Events.ERROR, (_e, data) => {
-            if (!data.fatal) return;
+            if (!data.fatal || cancelled || hlsRef.current !== hls || loadFailedRef.current) return;
             if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-              if (!viaProxy && !proxyTriedRef.current) {
+              const fallback = proxyFallbackUrl(
+                originalSrcRef.current,
+                src,
+                proxyTriedRef.current,
+              );
+              if (!viaProxy && fallback) {
                 proxyTriedRef.current = true;
-                start(proxiedUrl(originalSrcRef.current));
+                usePlayer.getState()._setLoading(true);
+                launch(fallback);
               } else {
-                usePlayer.getState()._setError("This live stream is offline, geo-blocked, or unreachable.");
+                fail("This live stream is offline, geo-blocked, or unreachable.");
               }
             } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-              hls.recoverMediaError();
+              if (mediaRecoveriesRef.current < 1) {
+                mediaRecoveriesRef.current += 1;
+                usePlayer.getState()._setLoading(true);
+                try {
+                  hls.recoverMediaError();
+                } catch {
+                  fail("This live stream could not recover. Retry it or skip to another source.");
+                }
+              } else {
+                fail("This live stream could not recover. Retry it or skip to another source.");
+              }
             } else {
-              usePlayer.getState()._setError("This live stream could not be played.");
+              fail("This live stream could not be played. Retry it or skip to another source.");
             }
           });
           hls.loadSource(src);
@@ -192,8 +254,9 @@ export default function PlayerHost() {
         el.load();
       }
 
-      el.volume = muted ? 0 : volume;
-      if (usePlayer.getState().isPlaying) {
+      const state = usePlayer.getState();
+      el.volume = state.muted ? 0 : state.volume;
+      if (state.isPlaying) {
         try {
           await el.play();
         } catch {
@@ -202,15 +265,51 @@ export default function PlayerHost() {
       }
     };
 
+    const launch = (src: string) => {
+      void start(src).catch(() => {
+        fail(
+          item.kind === "radio"
+            ? "This radio stream could not be loaded. Retry it or skip to another station."
+            : "Playback could not be loaded. Retry it or skip to another source.",
+        );
+      });
+    };
+
+    const handleNativeError = (failedEl: HTMLMediaElement) => {
+      if (cancelled || failedEl !== el || loadFailedRef.current) return;
+      const fallback = wantsHls
+        ? proxyFallbackUrl(originalSrcRef.current, activeSrc, proxyTriedRef.current)
+        : null;
+      if (fallback) {
+        proxyTriedRef.current = true;
+        usePlayer.getState()._setError(null);
+        usePlayer.getState()._setLoading(true);
+        launch(fallback);
+        return;
+      }
+      fail(
+        item.kind === "radio"
+          ? "This radio station is offline or unreachable. Retry it or skip to another station."
+          : "Playback failed — this source may be offline, geo-blocked, or unavailable.",
+      );
+    };
+    nativeErrorHandlerRef.current = handleNativeError;
+
     // HTTP origins must start proxied; "Force proxy for live TV" routes TV through it too (beats CORS).
     const forceProxy = item.kind === "tv" && wantsHls && useSettings.getState().forceProxyTv;
-    start(needsProxy(item.src) || forceProxy ? proxiedUrl(item.src) : item.src);
+    launch(initialPlaybackUrl(item.src, forceProxy));
 
     return () => {
       cancelled = true;
+      if (nativeErrorHandlerRef.current === handleNativeError) nativeErrorHandlerRef.current = null;
+      if (activeElementRef.current === el) activeElementRef.current = null;
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current?.id]);
+  }, [current?.id, current?.src, current?.kind, current?.streamType, reloadToken]);
 
   // Reflect play/pause intent.
   useEffect(() => {
@@ -365,10 +464,9 @@ export default function PlayerHost() {
 
   return (
     <>
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <audio ref={audioRef} preload="auto" />
-      <FloatingVideo videoRef={videoRef} visible={isVideo} />
-      {current && !isVideo && <NowPlayingBar />}
+      <FloatingVideo videoRef={videoRef} visible={isVideo} onRetry={retryCurrent} />
+      {current && !isVideo && <NowPlayingBar onRetry={retryCurrent} />}
       <QueuePanel />
     </>
   );

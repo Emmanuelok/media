@@ -9,6 +9,24 @@ export function needsProxy(url: string): boolean {
   return url.startsWith("http://");
 }
 
+/** Pick the first playback URL without proxying healthy HTTPS sources by default. */
+export function initialPlaybackUrl(url: string, forceProxy = false): string {
+  return needsProxy(url) || forceProxy ? proxiedUrl(url) : url;
+}
+
+/**
+ * Return the single allowed proxy fallback for a failed direct attempt.
+ * A proxied attempt never produces another candidate, which keeps recovery finite.
+ */
+export function proxyFallbackUrl(
+  originalUrl: string,
+  attemptedUrl: string,
+  proxyAlreadyTried: boolean,
+): string | null {
+  if (proxyAlreadyTried || attemptedUrl.startsWith("/api/stream")) return null;
+  return proxiedUrl(originalUrl);
+}
+
 /** Probe a stream's reachability via /api/check (server-side; no CORS limits). */
 export async function checkStream(url: string, timeoutMs = 9000): Promise<boolean> {
   try {

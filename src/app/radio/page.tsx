@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Radio, Search } from "lucide-react";
+import { Globe2, Headphones, Play, Radio, Search, Waves } from "lucide-react";
 import {
   topRadio,
   radioByTag,
@@ -14,18 +14,102 @@ import {
 import { Browse } from "@/components/live/Browse";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Chips } from "@/components/ui/Chips";
+import { Artwork } from "@/components/ui/Artwork";
+import { usePlayer } from "@/lib/store";
+import type { MediaItem } from "@/lib/types";
 
-function RadioInner() {
-  const sp = useSearchParams();
-  const initialQ = sp.get("q") || "";
+let topRadioRequest: Promise<MediaItem[]> | null = null;
+
+function loadTopRadio(): Promise<MediaItem[]> {
+  if (!topRadioRequest) {
+    topRadioRequest = topRadio(60).catch((error) => {
+      topRadioRequest = null;
+      throw error;
+    });
+  }
+  return topRadioRequest;
+}
+
+function TunerSpotlight() {
+  const [station, setStation] = useState<MediaItem | null>(null);
+  const play = usePlayer((state) => state.play);
+
+  useEffect(() => {
+    let active = true;
+    void loadTopRadio()
+      .then((items) => {
+        if (active) setStation(items[0] ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <section className="tuner-stage" aria-labelledby="tuner-stage-title">
+      <div className="tuner-stage-art">
+        <Artwork
+          src={station?.thumbnail}
+          title={station?.title || "Aurora World Tuner"}
+          subtitle={station?.country || "Global radio"}
+          kind="radio"
+          showMeta
+          rounded="rounded-none"
+          className="h-full w-full"
+        />
+      </div>
+      <div className="tuner-stage-copy">
+        <span>
+          <Waves className="h-3.5 w-3.5" />
+          Frequency in focus
+        </span>
+        <h2 id="tuner-stage-title">{station?.title || "Scanning the world…"}</h2>
+        <p>
+          {station
+            ? [station.country, station.language, station.codec, station.bitrate ? `${station.bitrate} kbps` : null]
+                .filter(Boolean)
+                .join(" / ")
+            : "Finding a recently verified, browser-compatible station."}
+        </p>
+        {station && (
+          <button onClick={() => play(station, [station])} className="signal-action-primary">
+            <Play className="h-4 w-4" fill="currentColor" />
+            Tune in
+          </button>
+        )}
+      </div>
+      <div className="tuner-dial" aria-hidden="true">
+        <span>88</span>
+        <i />
+        <span>92</span>
+        <i />
+        <span>96</span>
+        <i />
+        <span>100</span>
+        <i />
+        <span>104</span>
+        <i />
+        <span>108</span>
+      </div>
+      <div className="tuner-meta">
+        <span>
+          <Headphones className="h-4 w-4" />
+          Browser-safe codecs
+        </span>
+        <span>
+          <Globe2 className="h-4 w-4" />
+          Recent health data
+        </span>
+      </div>
+    </section>
+  );
+}
+
+function RadioSession({ initialQ }: { initialQ: string }) {
   const [q, setQ] = useState(initialQ);
   const [input, setInput] = useState(initialQ);
   const [sel, setSel] = useState("top");
-
-  useEffect(() => {
-    setQ(initialQ);
-    setInput(initialQ);
-  }, [initialQ]);
 
   const genreChips = [
     { id: "top", label: "Top", emoji: "🔥" },
@@ -44,23 +128,27 @@ function RadioInner() {
         ? radioByCountry(sel.slice(8), 60)
         : sel.startsWith("genre:")
           ? radioByTag(sel.slice(6), 48)
-          : topRadio(60);
+          : loadTopRadio();
 
   return (
-    <div className="animate-fade-up">
+    <div className="animate-fade-up route-world-tuner">
       <PageHeader
         icon={Radio}
         title="Live Radio"
         subtitle="35,000+ live stations from every corner of the planet"
         accent="bg-gradient-to-br from-amber-500 to-orange-600"
+        image="/aurora/radio-world.webp"
+        eyebrow="The world in sound"
       />
+
+      <TunerSpotlight />
 
       <form
         onSubmit={(e) => {
           e.preventDefault();
           setQ(input.trim());
         }}
-        className="relative mb-4 max-w-md"
+        className="tuner-search relative mb-4 max-w-xl"
       >
         <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
         <input
@@ -72,9 +160,9 @@ function RadioInner() {
       </form>
 
       {!q && (
-        <>
+        <div className="live-filter-dock">
+          <span className="live-filter-label">Scan by sound or place</span>
           <Chips
-            className="mb-3"
             items={genreChips}
             value={sel}
             onChange={(v) => {
@@ -83,7 +171,6 @@ function RadioInner() {
             }}
           />
           <Chips
-            className="mb-6"
             items={countryChips}
             value={sel}
             onChange={(v) => {
@@ -91,7 +178,7 @@ function RadioInner() {
               setQ("");
             }}
           />
-        </>
+        </div>
       )}
       {q && (
         <p className="mb-4 text-sm text-muted">
@@ -118,9 +205,15 @@ function RadioInner() {
   );
 }
 
+function RadioInner() {
+  const sp = useSearchParams();
+  const initialQ = sp.get("q") || "";
+  return <RadioSession key={initialQ} initialQ={initialQ} />;
+}
+
 export default function Page() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div className="min-h-[60vh] animate-pulse rounded-xl bg-white/[0.03]" />}>
       <RadioInner />
     </Suspense>
   );

@@ -25,10 +25,10 @@ export function MediaCard({
   const contain = item.kind === "tv" || item.kind === "radio";
 
   return (
-    <div className={cn("group block w-full text-left", className)}>
+    <div className={cn("media-card group block w-full text-left", className)}>
       <div
         className={cn(
-          "relative w-full overflow-hidden rounded-xl bg-surface-2 ring-1 ring-white/5",
+          "media-card-art relative w-full overflow-hidden rounded-2xl bg-surface-2 ring-1 ring-white/7",
           wide ? "aspect-video" : "aspect-square",
           isActive && "ring-2 ring-accent",
         )}
@@ -38,8 +38,8 @@ export function MediaCard({
           title={item.title}
           kind={item.kind}
           contain={contain}
-          rounded="rounded-xl"
-          className="transition duration-500 group-hover:scale-105"
+          rounded="rounded-2xl"
+          className="transition duration-700 group-hover:scale-[1.045]"
         />
 
         {/* Full-area play target (kept separate from the like button — no nested buttons) */}
@@ -69,8 +69,8 @@ export function MediaCard({
           </span>
         )}
 
-        <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center bg-gradient-to-t from-black/50 to-transparent opacity-0 transition duration-200 group-hover:opacity-100">
-          <span className="grid h-12 w-12 translate-y-2 place-items-center rounded-full bg-accent text-white shadow-xl transition duration-200 group-hover:translate-y-0">
+        <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center bg-gradient-to-t from-black/70 via-black/5 to-white/5 opacity-0 transition duration-300 group-hover:opacity-100">
+          <span className="grid h-12 w-12 translate-y-2 place-items-center rounded-full border border-white/50 bg-white text-black shadow-2xl transition duration-300 group-hover:translate-y-0">
             <Play className="ml-0.5 h-5 w-5" fill="currentColor" />
           </span>
         </div>
@@ -78,8 +78,8 @@ export function MediaCard({
         <button
           onClick={() => toggleFavorite(item)}
           className={cn(
-            "absolute bottom-2 left-2 z-30 grid h-8 w-8 place-items-center rounded-full bg-black/55 backdrop-blur transition focus-visible:opacity-100",
-            favorited ? "text-accent opacity-100" : "text-white opacity-0 group-hover:opacity-100",
+            "absolute bottom-2 left-2 z-30 grid h-11 w-11 place-items-center rounded-full bg-black/55 backdrop-blur transition focus-visible:opacity-100",
+            favorited ? "text-accent opacity-100" : "text-white/90 opacity-100",
           )}
           aria-label={favorited ? "Remove from favorites" : "Save to favorites"}
         >
@@ -87,10 +87,10 @@ export function MediaCard({
         </button>
       </div>
 
-      <button onClick={() => play(item, queue)} className="mt-2 block w-full px-0.5 text-left">
+      <button onClick={() => play(item, queue)} className="mt-3 block w-full px-0.5 text-left">
         <p
           className={cn(
-            "line-clamp-2 text-sm font-semibold leading-snug",
+            "line-clamp-2 text-sm font-semibold leading-snug tracking-[-0.01em]",
             isActive ? "text-accent" : "text-white",
           )}
         >
@@ -122,30 +122,30 @@ export function Shelf({
     ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.85, behavior: "smooth" });
 
   return (
-    <section className="mb-8">
-      <header className="mb-3 flex items-end justify-between gap-3">
+    <section className="mb-10">
+      <header className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-white sm:text-xl">{title}</h2>
-          {subtitle && <p className="text-sm text-muted">{subtitle}</p>}
+          <h2 className="text-lg font-semibold tracking-[-0.025em] text-white sm:text-xl">{title}</h2>
+          {subtitle && <p className="mt-0.5 text-xs uppercase tracking-[0.12em] text-muted">{subtitle}</p>}
         </div>
         <div className="hidden gap-1 sm:flex">
           <button
             onClick={() => scroll(-1)}
-            className="grid h-8 w-8 place-items-center rounded-full bg-surface-2 text-muted transition hover:bg-surface hover:text-white"
+            className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-muted transition hover:border-white/20 hover:bg-white/10 hover:text-white"
             aria-label="Scroll left"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
           <button
             onClick={() => scroll(1)}
-            className="grid h-8 w-8 place-items-center rounded-full bg-surface-2 text-muted transition hover:bg-surface hover:text-white"
+            className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-muted transition hover:border-white/20 hover:bg-white/10 hover:text-white"
             aria-label="Scroll right"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </header>
-      <div ref={ref} className="no-scrollbar flex snap-x gap-3 overflow-x-auto pb-1">
+      <div ref={ref} className="no-scrollbar flex snap-x gap-4 overflow-x-auto pb-2">
         {items.map((it) => (
           <div key={it.id} className={cn("shrink-0 snap-start", cardWidth)}>
             <MediaCard item={it} queue={items} />
