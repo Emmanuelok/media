@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { Tv, Radio, Music2, Play } from "lucide-react";
 import { cn, gradientFor } from "@/lib/utils";
@@ -29,16 +30,39 @@ export function Artwork({
   if (!src || err) {
     return (
       <div
-        className={cn("relative grid place-items-center overflow-hidden", rounded, className)}
+        className={cn(
+          "fallback-art relative grid place-items-center overflow-hidden",
+          rounded,
+          className,
+        )}
         style={{ background: gradientFor(title) }}
       >
-        <Icon className="h-2/5 w-2/5 max-h-10 max-w-10 text-white/85" />
-        <div className="absolute inset-0 bg-black/10" />
+        <span className="fallback-art-orbit" aria-hidden="true" />
+        <span className="fallback-art-grid" aria-hidden="true" />
+        <Icon className="relative z-10 h-2/5 w-2/5 max-h-10 max-w-10 text-white/90 drop-shadow-lg" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-white/10" />
+      </div>
+    );
+  }
+
+  if (src.startsWith("/")) {
+    return (
+      <div className={cn("relative overflow-hidden bg-surface-2", rounded, className)}>
+        <Image
+          src={src}
+          alt={title}
+          fill
+          sizes="(max-width: 768px) 50vw, 20vw"
+          onError={() => setErr(true)}
+          className={cn(contain ? "object-contain p-1" : "object-cover", rounded)}
+        />
       </div>
     );
   }
 
   return (
+    // Live station and broadcaster art comes from thousands of dynamic third-party hosts.
+    // A native image keeps those sources functional without an unsafe wildcard optimizer policy.
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}

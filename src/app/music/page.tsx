@@ -7,7 +7,7 @@ import { TRACKS, PLAYLISTS, tracksFor } from "@/lib/catalog";
 import { usePlayer } from "@/lib/store";
 import { Artwork } from "@/components/ui/Artwork";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { formatTime, cn, gradientFor } from "@/lib/utils";
+import { formatTime, cn } from "@/lib/utils";
 
 function MusicInner() {
   const sp = useSearchParams();
@@ -28,6 +28,8 @@ function MusicInner() {
         title="Music"
         subtitle="Albums, playlists & tracks — with a player that follows you everywhere"
         accent="bg-gradient-to-br from-emerald-500 to-green-600"
+        image="/aurora/music-world.webp"
+        eyebrow="Aurora sound"
       />
 
       {!q && (
@@ -40,17 +42,24 @@ function MusicInner() {
                 <button
                   key={pl.id}
                   onClick={() => list[0] && play(list[0], list)}
-                  className="group flex items-center gap-3 overflow-hidden rounded-xl bg-surface-2 p-3 text-left transition hover:bg-surface"
+                  className="group relative min-h-44 overflow-hidden rounded-2xl border border-white/10 bg-surface-2 p-4 text-left transition hover:-translate-y-1 hover:border-white/20"
                 >
-                  <span
-                    className="grid h-14 w-14 shrink-0 place-items-center rounded-lg text-2xl"
-                    style={{ background: gradientFor(pl.title) }}
-                  >
-                    {pl.emoji}
+                  <span className="absolute inset-0">
+                    <Artwork
+                      src={pl.cover}
+                      title={pl.title}
+                      kind="music"
+                      rounded="rounded-2xl"
+                      className="h-full w-full transition duration-700 group-hover:scale-105"
+                    />
                   </span>
-                  <span className="min-w-0">
+                  <span className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-transparent" />
+                  <span className="relative z-10 flex h-full min-h-36 flex-col justify-end">
+                    <span className="mb-3 grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/35 text-base backdrop-blur">
+                      {pl.emoji}
+                    </span>
                     <span className="block truncate font-semibold text-white">{pl.title}</span>
-                    <span className="block truncate text-xs text-muted">{pl.subtitle}</span>
+                    <span className="mt-0.5 block truncate text-xs text-white/55">{pl.subtitle}</span>
                   </span>
                 </button>
               );

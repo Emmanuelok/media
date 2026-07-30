@@ -97,6 +97,8 @@ export default function ChannelsPage() {
         title="Global Networks"
         subtitle="Where to watch — official broadcasters by country, incl. World Cup rights-holders"
         accent="bg-gradient-to-br from-cyan-500 to-blue-600"
+        image="/aurora/global-world.webp"
+        eyebrow="Across every border"
       />
 
       <div className="mb-5 flex items-start gap-2 rounded-xl border border-white/10 bg-surface/40 p-3 text-xs text-muted">

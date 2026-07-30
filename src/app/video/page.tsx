@@ -31,6 +31,8 @@ function VideoInner() {
         title="Video"
         subtitle="On-demand films, shows & shorts — in up to 4K"
         accent="bg-gradient-to-br from-rose-500 to-red-600"
+        image="/aurora/video-world.webp"
+        eyebrow="Aurora cinema"
       />
       {q && (
         <p className="mb-4 text-sm text-muted">

@@ -53,6 +53,8 @@ function RadioInner() {
         title="Live Radio"
         subtitle="35,000+ live stations from every corner of the planet"
         accent="bg-gradient-to-br from-amber-500 to-orange-600"
+        image="/aurora/radio-world.webp"
+        eyebrow="The world in sound"
       />
 
       <form

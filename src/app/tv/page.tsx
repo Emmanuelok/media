@@ -41,6 +41,8 @@ function TvInner() {
         title="Live TV"
         subtitle="Thousands of free-to-air channels worldwide — news, sports, movies & more"
         accent="bg-gradient-to-br from-sky-500 to-blue-600"
+        image="/aurora/live-tv-world.webp"
+        eyebrow="Global signal"
       />
 
       <Chips className="mb-3" items={catChips} value={sel} onChange={setSel} />

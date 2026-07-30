@@ -16,22 +16,26 @@ export default function Sidebar() {
   const openConcierge = useUI((s) => s.openConcierge);
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-1 border-r border-white/10 bg-[#0a0a11] px-3 py-4 md:flex">
-      <Link href="/" className="mb-4 flex items-center gap-2.5 px-2">
-        <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-400 shadow-lg shadow-fuchsia-500/20">
-          <Sparkles className="h-5 w-5 text-white" />
+    <aside className="sidebar-lux sticky top-3 z-20 ml-3 hidden h-[calc(100vh-1.5rem)] w-[17rem] shrink-0 flex-col gap-1 rounded-[28px] border border-white/10 px-3 py-4 md:flex">
+      <Link href="/" className="mb-5 flex items-center gap-3 px-2">
+        <span className="brand-orbit">
+          <span />
+          <Sparkles className="relative z-10 h-4 w-4 text-white" />
         </span>
         <span className="leading-none">
-          <span className="block bg-gradient-to-r from-violet-300 via-fuchsia-200 to-cyan-200 bg-clip-text text-lg font-extrabold tracking-tight text-transparent">
+          <span className="block text-lg font-semibold tracking-[-0.04em] text-white">
             Aurora
           </span>
-          <span className="block text-[10px] font-medium uppercase tracking-[0.18em] text-muted">
+          <span className="mt-1 block text-[9px] font-medium uppercase tracking-[0.24em] text-white/35">
             AI Media House
           </span>
         </span>
       </Link>
 
-      <nav aria-label="Primary" className="flex flex-col gap-0.5">
+      <p className="mb-1 px-3 text-[9px] font-bold uppercase tracking-[0.24em] text-white/25">
+        Explore
+      </p>
+      <nav aria-label="Primary" className="flex flex-col gap-1">
         {NAV.map(({ href, label, icon: Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
@@ -40,14 +44,15 @@ export default function Sidebar() {
               href={href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
+                "sidebar-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
                 active
-                  ? "bg-white/10 text-white"
-                  : "text-muted hover:bg-white/5 hover:text-white",
+                  ? "sidebar-link-active text-white"
+                  : "text-white/45 hover:bg-white/5 hover:text-white",
               )}
             >
-              <Icon className={cn("h-5 w-5", active && "text-accent")} />
+              <Icon className={cn("h-[18px] w-[18px]", active && "text-white")} />
               {label}
+              {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_12px_var(--color-accent)]" />}
             </Link>
           );
         })}
@@ -55,19 +60,28 @@ export default function Sidebar() {
 
       <button
         onClick={() => openConcierge()}
-        className="mt-3 flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600/90 to-fuchsia-600/90 px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-fuchsia-600/20 transition hover:from-violet-600 hover:to-fuchsia-600"
+        className="sidebar-ai mt-4 flex items-center gap-2 rounded-2xl px-3 py-3 text-sm font-semibold text-white transition"
       >
-        <Sparkles className="h-4 w-4" /> Ask Aurora AI
+        <span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-black">
+          <Sparkles className="h-4 w-4" />
+        </span>
+        <span className="text-left">
+          <span className="block">Ask Aurora</span>
+          <span className="block text-[10px] font-normal text-white/45">Describe a feeling</span>
+        </span>
       </button>
 
+      <p className="mb-1 mt-5 px-3 text-[9px] font-bold uppercase tracking-[0.24em] text-white/25">
+        Personal
+      </p>
       <Link
         href="/channels"
         aria-current={pathname.startsWith("/channels") ? "page" : undefined}
         className={cn(
-          "mt-2 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
+          "sidebar-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
           pathname.startsWith("/channels")
-            ? "bg-white/10 text-white"
-            : "text-muted hover:bg-white/5 hover:text-white",
+            ? "sidebar-link-active text-white"
+            : "text-white/45 hover:bg-white/5 hover:text-white",
         )}
       >
         <Globe className={cn("h-5 w-5", pathname.startsWith("/channels") && "text-accent")} />
@@ -78,10 +92,10 @@ export default function Sidebar() {
         href="/routines"
         aria-current={pathname.startsWith("/routines") ? "page" : undefined}
         className={cn(
-          "mt-2 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
+          "sidebar-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
           pathname.startsWith("/routines")
-            ? "bg-white/10 text-white"
-            : "text-muted hover:bg-white/5 hover:text-white",
+            ? "sidebar-link-active text-white"
+            : "text-white/45 hover:bg-white/5 hover:text-white",
         )}
       >
         <Wand2 className={cn("h-5 w-5", pathname.startsWith("/routines") && "text-accent")} />
@@ -92,10 +106,10 @@ export default function Sidebar() {
         href="/settings"
         aria-current={pathname.startsWith("/settings") ? "page" : undefined}
         className={cn(
-          "mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
+          "sidebar-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
           pathname.startsWith("/settings")
-            ? "bg-white/10 text-white"
-            : "text-muted hover:bg-white/5 hover:text-white",
+            ? "sidebar-link-active text-white"
+            : "text-white/45 hover:bg-white/5 hover:text-white",
         )}
       >
         <Settings className={cn("h-5 w-5", pathname.startsWith("/settings") && "text-accent")} />

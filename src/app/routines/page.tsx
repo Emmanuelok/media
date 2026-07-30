@@ -73,6 +73,8 @@ export default function RoutinesPage() {
         title="Routines"
         subtitle="One tap and Aurora sets the whole scene — powered by the autonomous AI agent"
         accent="bg-gradient-to-br from-violet-500 to-indigo-600"
+        image="/aurora/routines-world.webp"
+        eyebrow="Media in motion"
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

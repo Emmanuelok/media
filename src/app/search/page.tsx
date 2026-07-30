@@ -25,6 +25,8 @@ function SearchInner() {
           icon={SearchIcon}
           title="Search"
           subtitle="Find anything across video, music, live TV & radio"
+          image="/aurora/ai-concierge.webp"
+          eyebrow="Intelligent discovery"
         />
         <EmptyState message="Type in the search bar above to explore Aurora." />
       </div>
@@ -40,7 +42,13 @@ function SearchInner() {
 
   return (
     <div className="animate-fade-up space-y-8">
-      <PageHeader icon={SearchIcon} title={`Results for “${q}”`} subtitle="Across every medium on Aurora" />
+      <PageHeader
+        icon={SearchIcon}
+        title={`Results for “${q}”`}
+        subtitle="Across every medium on Aurora"
+        image="/aurora/ai-concierge.webp"
+        eyebrow="Intelligent discovery"
+      />
 
       <button
         onClick={() => openConcierge(q)}

@@ -21,6 +21,8 @@ export default function LibraryPage() {
         title="Your Library"
         subtitle="Favorites, history and what you were watching"
         accent="bg-gradient-to-br from-pink-500 to-rose-600"
+        image="/aurora/library-world.webp"
+        eyebrow="Your media memory"
       />
 
       {isEmpty ? (

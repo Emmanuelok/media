@@ -229,6 +229,15 @@ const ALBUMS = [
   "Slow Motion",
 ];
 
+const ALBUM_ART: Record<string, string> = {
+  "After Hours": "/aurora/album-after-hours.webp",
+  Chromatic: "/aurora/album-chromatic.webp",
+  Lighthouse: "/aurora/album-lighthouse.webp",
+  "Paper Skies": "/aurora/album-paper-skies.webp",
+  Goldenrod: "/aurora/album-goldenrod.webp",
+  "Slow Motion": "/aurora/album-slow-motion.webp",
+};
+
 export const TRACKS: MediaItem[] = Array.from({ length: 16 }, (_, i) => {
   const n = i + 1;
   const artist = ARTISTS[i % ARTISTS.length];
@@ -239,6 +248,7 @@ export const TRACKS: MediaItem[] = Array.from({ length: 16 }, (_, i) => {
     title: `${album} — Pt. ${((i % 4) + 1)}`,
     subtitle: artist,
     description: album,
+    thumbnail: ALBUM_ART[album],
     src: `${SH}${n}.mp3`,
     streamType: "file" as const,
     category: ["Pop", "Electronic", "Lo-Fi", "Indie", "Ambient", "Dance"][i % 6],
@@ -253,6 +263,7 @@ export interface Playlist {
   title: string;
   subtitle: string;
   emoji: string;
+  cover: string;
   trackIds: string[];
 }
 
@@ -262,6 +273,7 @@ export const PLAYLISTS: Playlist[] = [
     title: "Deep Focus",
     subtitle: "Instrumental flow",
     emoji: "🎯",
+    cover: ALBUM_ART["After Hours"],
     trackIds: TRACKS.slice(0, 6).map((t) => t.id),
   },
   {
@@ -269,6 +281,7 @@ export const PLAYLISTS: Playlist[] = [
     title: "Late Night Drive",
     subtitle: "After-hours synth",
     emoji: "🌃",
+    cover: ALBUM_ART.Chromatic,
     trackIds: TRACKS.slice(4, 10).map((t) => t.id),
   },
   {
@@ -276,6 +289,7 @@ export const PLAYLISTS: Playlist[] = [
     title: "Peak Energy",
     subtitle: "Move your body",
     emoji: "⚡",
+    cover: ALBUM_ART.Lighthouse,
     trackIds: TRACKS.slice(6, 14).map((t) => t.id),
   },
   {
@@ -283,6 +297,7 @@ export const PLAYLISTS: Playlist[] = [
     title: "Sunday Chill",
     subtitle: "Easy & warm",
     emoji: "☕",
+    cover: ALBUM_ART["Paper Skies"],
     trackIds: TRACKS.slice(0, 8).map((t) => t.id),
   },
   {
@@ -290,6 +305,7 @@ export const PLAYLISTS: Playlist[] = [
     title: "Discovery",
     subtitle: "Fresh finds",
     emoji: "🧭",
+    cover: ALBUM_ART.Goldenrod,
     trackIds: TRACKS.slice(8, 16).map((t) => t.id),
   },
   {
@@ -297,6 +313,7 @@ export const PLAYLISTS: Playlist[] = [
     title: "All Night",
     subtitle: "Keep it going",
     emoji: "🌌",
+    cover: ALBUM_ART["Slow Motion"],
     trackIds: TRACKS.slice(2, 14).map((t) => t.id),
   },
 ];
