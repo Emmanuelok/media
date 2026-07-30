@@ -18,13 +18,25 @@ import { Artwork } from "@/components/ui/Artwork";
 import { usePlayer } from "@/lib/store";
 import type { MediaItem } from "@/lib/types";
 
+let topRadioRequest: Promise<MediaItem[]> | null = null;
+
+function loadTopRadio(): Promise<MediaItem[]> {
+  if (!topRadioRequest) {
+    topRadioRequest = topRadio(60).catch((error) => {
+      topRadioRequest = null;
+      throw error;
+    });
+  }
+  return topRadioRequest;
+}
+
 function TunerSpotlight() {
   const [station, setStation] = useState<MediaItem | null>(null);
   const play = usePlayer((state) => state.play);
 
   useEffect(() => {
     let active = true;
-    void topRadio(1)
+    void loadTopRadio()
       .then((items) => {
         if (active) setStation(items[0] ?? null);
       })
@@ -116,7 +128,7 @@ function RadioSession({ initialQ }: { initialQ: string }) {
         ? radioByCountry(sel.slice(8), 60)
         : sel.startsWith("genre:")
           ? radioByTag(sel.slice(6), 48)
-          : topRadio(60);
+          : loadTopRadio();
 
   return (
     <div className="animate-fade-up route-world-tuner">
